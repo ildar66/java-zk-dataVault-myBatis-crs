@@ -1,0 +1,11 @@
+{
+  "key": "PERSIST_TEST#NEW_STRING",
+  "name": {
+    "descriptionRu": "Attribute3Ru",
+    "descriptionEn": "Attribute3En"
+  },
+  "type": "STRING",
+  "viewOrder": 2,
+  "multilang": false,
+  "nativeColumn": "NEW_STRING"
+}

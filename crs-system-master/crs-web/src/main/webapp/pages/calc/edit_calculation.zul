@@ -1,0 +1,488 @@
+<zk>
+    <window border="none"
+            viewModel="@id('vm') @init('ru.masterdm.crs.web.model.calc.EditCalculationViewModel')"
+            contentStyle="overflow:auto;" height="100%">
+
+        <?component name="classifiersFull" macroURI="/components/calc/classifiers_full.zul"?>
+        <caption>
+            <hbox hflex="1">
+                <vbox hflex="1">
+                    <div>
+                        <forEach items="@init(nav.breadCrumbs)" var="breadCrumb" varStatus="breadCrumbStatus">
+                            <label value="@init(breadCrumb.name)" style="cursor:pointer"
+                                   onClick="@global-command('navigateGlobal', targetPage=breadCrumb.page)"/>
+                            <label zclass="z-icon-angle-right"/>
+                        </forEach>
+                        <label value="@load((vm.calculation.id eq null ? (vm.copy ? labels.copy_calculation_title : labels.create_calculation_title) : (vm.edit ? labels.edit_calculation_title : labels.view_calculation_title)))"/>
+                        <label value="@load(vm.calculation.id eq null ? '' : vm.calculation.name.concat(' (').concat(vm.calculation.key).concat(')'))"/>
+                    </div>
+                    <label value="@load(vm.headerLabel)" sclass="calculation-header"/>
+                </vbox>
+                <hbox hflex="1" pack="end">
+                    <toolbar>
+                        <toolbarbutton label="@load(labels.save_button)" onClick="@command('saveCalculation')" iconSclass="z-icon-save"
+                                       disabled="@load(not vm.edit or (not nav.isPermitted('CALC', 'EDIT')))"/>
+                        <toolbarbutton iconSclass="z-icon-copy" onClick="@command('copyCalculation')"
+                                       label="@init(labels.copy_button)"
+                                       disabled="@load((vm.calculation.id eq null) or (not nav.isPermitted('CALC','CREATE_COPY')))"/>
+                        <toolbarbutton label="@load(labels.import_button)" iconSclass="z-icon-download" popup="importTemplatesPopup, type=toggle"
+                                       disabled="@load(vm.calculation.id eq null or vm.calculation.published or (empty vm.importTemplates and empty vm.excelForms) or (not nav.isPermitted('FORM_TEMPLATE', 'USE_AT_CALC')))"/>
+                        <toolbarbutton label="@load(labels.export_button)" iconSclass="z-icon-upload" popup="exportTemplatesPopup, type=toggle"
+                                       disabled="@load(vm.calculation.id eq null or (empty vm.excelForms and empty vm.excelReports) or (not nav.isPermitted('FORM_TEMPLATE', 'USE_AT_CALC')))"/>
+                        <toolbarbutton iconSclass="z-icon-calculator" onClick="@command('calculate')"
+                                       label="@load(labels.calculation_button)"
+                                       disabled="@load(vm.calculation.id eq null or vm.calculation.published) or (not nav.isPermitted('CALC','EXECUTE')))"/>
+                        <toolbarbutton iconSclass="z-icon-send" onClick="@command('publishCalculation')"
+                                       label="@init(labels.publish_button)"
+                                       disabled="@load((vm.calculation.id eq null or vm.calculation.published) or (not nav.isPermitted('CALC','PUBLISH')))"/>
+                    </toolbar>
+                </hbox>
+            </hbox>
+            <menupopup id="importTemplatesPopup">
+                <menu label="@init(labels.edit_calculation_card_form_data)" visible="@load(not empty vm.excelForms)">
+                    <menupopup children="@load(vm.excelForms)">
+                        <template name="children" var="form">
+                            <menuitem label="@load(form.formTemplate.name.getDescription(sessionScope.userProfile.locale))"
+                                      onClick="@command('importCommand', template = form.formTemplate, command='importFileCalculation')"/>
+                        </template>
+                    </menupopup>
+                </menu>
+                <menu label="@init(labels.templates_import_title)" visible="@load(not empty vm.importTemplates)">
+                    <menupopup children="@load(vm.importTemplates)">
+                        <template name="children" var="template">
+                            <menuitem label="@load(template.name.getDescription(sessionScope.userProfile.locale))"
+                                      onClick="@command('importCommand', template = template, command='importFileCalculation')"/>
+                        </template>
+                    </menupopup>
+                </menu>
+            </menupopup>
+            <menupopup id="exportTemplatesPopup">
+                <menu label="@init(labels.edit_calculation_card_form_data)" visible="@load(not empty vm.excelForms)">
+                    <menupopup children="@load(vm.excelForms)">
+                        <template name="children" var="form">
+                            <menuitem label="@load(form.formTemplate.name.getDescription(sessionScope.userProfile.locale))"
+                                      onClick="@command('exportFile', template = form.formTemplate)"/>
+                        </template>
+                    </menupopup>
+                </menu>
+                <menu label="@init(labels.edit_calculation_reports)" visible="@load(not empty vm.excelReports)">
+                    <menupopup children="@load(vm.excelReports)">
+                        <template name="children" var="report">
+                            <menuitem label="@load(report.formTemplate.name.getDescription(sessionScope.userProfile.locale))"
+                                      onClick="@command('exportFile', template = report.formTemplate)"/>
+                        </template>
+                    </menupopup>
+                </menu>
+            </menupopup>
+        </caption>
+        <vbox vflex="1" hflex="1" sclass="card-calculation">
+            <radiogroup id="radioGroupProfile"/>
+            <tabbox id="tb" vflex="1" hflex="1" selectedTab="@save(vm.selectedTab)">
+                <tabs id="tabs">
+                    <tab label="@init(labels.edit_calculation_card)"/>
+                    <tab label="@init(labels.edit_calculation_card_form_data)"
+                         disabled="@load(empty vm.calculation.id  or empty vm.excelForms or not not nav.isPermittedForEntityType('INPUT_FORM','USE_AT_CALC'))"/>
+                    <tab label="@init(labels.edit_calculation_classifiers)"
+                         disabled="@load(empty vm.calculation.id or empty vm.calculation.model or empty vm.calculation.model.classifiers or not not nav.isPermittedForEntityType('CLASSIFIER','USE_AT_CALC'))"/>
+                    <tab label="@init(labels.edit_calculation_formulas)"
+                         disabled="@load(empty vm.calculation.id or not vm.calculation.calculated or not not nav.isPermitted('CALC_FORMULA','USE_AT_CALC'))"/>
+                    <tab label="@init(labels.edit_calculation_reports)" disabled="@load(empty vm.calculation.id  or empty vm.excelReports)"/>
+                    <tab label="@init(labels.edit_calculation_files)" disabled="true"/>
+                    <tab label="@init(labels.edit_calculation_client_group_clients)"
+                         visible="@load(not empty vm.calculation.id and not empty vm.calculation.clientGroup)"/>
+                </tabs>
+                <tabpanels>
+                    <tabpanel>
+                        <vlayout vflex="1">
+                            <timer running="@load(vm.running)" repeats="true" delay="@init(vm.delay)" onTimer="@command('onTimer')"/>
+                            <grid sclass="grid-form" vflex="1">
+                                <custom-attributes org.zkoss.zul.nativebar="false"/>
+                                <columns visible="false">
+                                    <column label="Type" width="140px"/>
+                                    <column label="Content"/>
+                                </columns>
+                                <rows>
+                                    <row if="@init(not vm.edit)">
+                                        <label value="@init(labels.edit_calculation_key)"/>
+                                        <label value="@init(vm.calculation.key)" width="60%" tooltiptext="@init(vm.calculation.key)"/>
+                                    </row>
+                                    <row>
+                                        <label value="@init(labels.name)"/>
+                                        <textbox
+                                                value="@bind(vm.calculation.name) @save(vm.calculation.name, before={'saveCalculation', 'calculate'})"
+                                                width="60%" maxlength="128" constraint="no empty" disabled="@init(not vm.edit)"/>
+                                    </row>
+                                    <row>
+                                        <label value="@init(labels.edit_calculation_model)"/>
+                                        <div>
+                                            <if test="@init(empty vm.calculation.id and vm.edit)">
+                                                <combobox model="@load(vm.publishedModels)" readonly="true"
+                                                          selectedItem="@bind(vm.calculation.model) @save(vm.calculation.model, before={'saveCalculation', 'calculate'})"
+                                                          constraint="no empty" disabled="@load(not nav.isPermitted('CALC_MODEL','USE_AT_CALC'))"
+                                                          width="60%">
+                                                    <template name="model">
+                                                        <comboitem label="@init(vm.getModelLabel(each))"/>
+                                                    </template>
+                                                </combobox>
+                                            </if>
+                                            <if test="@init(not empty vm.calculation.id or not vm.edit)">
+                                                <label value="@init(vm.getModelLabel(vm.calculation.model))"/>
+                                            </if>
+                                        </div>
+                                    </row>
+                                    <row valign="top">
+                                        <combobox model="@init(vm.clientTypes)" selectedItem="@bind(vm.clientType)" readonly="true" hflex="1"
+                                                  if="${vm.edit}" onChange="@command('changeClientType', bandbox=bandboxClient)">
+                                            <template name="model">
+                                                <comboitem iconSclass="@init(vm.getClientTypeIconClass(each))"
+                                                           label="@init(vm.getClientTypeLabel(each))" value="@init(each)"/>
+                                            </template>
+                                        </combobox>
+                                        <label value="@init(vm.getClientTypeLabel(vm.clientType))" unless="${vm.edit}"/>
+                                        <vbox width="60%" if="${vm.edit}" spacing="0" sclass="calculation-field-search">
+                                            <hbox hflex="1" spacing="0">
+                                                <bandbox id="bandboxClient" value="@bind(vm.searchString)"
+                                                         onOK="@command('refreshEntitiesModel', bandbox=self)"
+                                                         hflex="1" buttonVisible="false">
+                                                    <bandpopup vflex="1" width="50%">
+                                                        <listbox model="@load(vm.entitiesModel)" selectedItem="@load(vm.selectedEntity)" vflex="1"
+                                                                 sclass="entities-list">
+                                                            <custom-attributes org.zkoss.zul.nativebar="false"/>
+                                                            <listhead>
+                                                                <listheader hflex="4" label="@load(vm.clientType eq 'CLIENT_GROUP'
+                                                                ? nav.getClientGroupAttributeLabel('NAME') : nav.getClientAttributeLabel('NAME'))"/>
+                                                                <listheader hflex="1" label="@load(vm.clientType eq 'CLIENT_GROUP'
+                                                                ? labels.client_group_code : labels.client_slx)"/>
+                                                                <listheader hflex="1" visible="@load(vm.clientType eq 'CLIENT')"
+                                                                            label="@load(nav.getClientAttributeLabel('CLIENT_INN'))"/>
+                                                            </listhead>
+                                                            <template name="model" var="entity">
+                                                                <listitem value="@load(entity)"
+                                                                          onClick="@command('setClient',entity=entity,bandbox=bandboxClient)">
+                                                                    <listcell label="@load(vm.getEntityLabel(entity))"/>
+                                                                    <listcell label="@load(entity.key)"/>
+                                                                    <listcell visible="@load(vm.clientType eq 'CLIENT')">
+                                                                        <forEach
+                                                                                items="@init(entity.attributes[nav.getClientAttributeMeta('CLIENT_INN').key].value)"
+                                                                                var="item"
+                                                                                varStatus="itemStatus">
+                                                                            <label value="@load(item.entity.getAttributeValue(nav.getClientInnAttributeKey('TAX_ID')))"/>
+                                                                            <label value=" "/>
+                                                                        </forEach>
+                                                                    </listcell>
+                                                                </listitem>
+                                                            </template>
+                                                        </listbox>
+                                                    </bandpopup>
+                                                </bandbox>
+                                                <button iconSclass="z-icon-search" autodisable="self"
+                                                        onClick="@command('refreshEntitiesModel', bandbox=bandboxClient)"
+                                                        tooltiptext="@init(labels.search_button)"/>
+                                            </hbox>
+                                            <label value="@init(labels.edit_calculation_search_title)" sclass="calculation-label-search"/>
+                                        </vbox>
+                                        <label value="@init(vm.clientType eq 'CLIENT_GROUP' ? vm.getEntityLabel(calculation.clientGroup)
+                                                                                            : vm.getEntityLabel(calculation.client))"
+                                               unless="${vm.edit}"/>
+                                    </row>
+                                    <row visible="@load(vm.calculation.model ne null and vm.calculation.model.periodicity.name() ne 'DAY')">
+                                        <label value="@init(labels.model_periodicity_year)"/>
+                                        <spinner constraint="min 1900" value="@bind(vm.actualityYear)"
+                                                 disabled="@load(not empty vm.calculation.id or not vm.edit)" width="140px"/>
+                                    </row>
+                                    <row visible="@load(vm.calculation.model.periodicity.name() eq 'QUARTER')">
+                                        <label value="@init(labels.model_periodicity_quarter)"/>
+                                        <spinner constraint="min 1, max 4" value="@bind(vm.actualityQuarter)"
+                                                 disabled="@load(not empty vm.calculation.id or not vm.edit)" width="140px"/>
+                                    </row>
+                                    <row visible="@load(vm.calculation.model.periodicity.name() eq 'MONTH')">
+                                        <label value="@init(labels.model_periodicity_month)"/>
+                                        <spinner constraint="min 1, max 12" value="@bind(vm.actualityMonth)"
+                                                 disabled="@load(not empty vm.calculation.id or not vm.edit)" width="140px"/>
+                                    </row>
+                                    <row visible="@load(not empty vm.calculation.id or vm.calculation.model.periodicity.name() eq 'DAY')">
+                                        <label value="@init(labels.edit_calculation_actuality)"/>
+                                        <datebox format="${labels.date_format}" width="140px"
+                                                 disabled="@load(not empty vm.calculation.id or not vm.edit or vm.calculation.model.periodicity.name() ne 'DAY')"
+                                                 value="@bind(vm.calculation.actuality) @converter('ru.masterdm.crs.web.util.converter.DateConverter')"/>
+                                    </row>
+                                    <row>
+                                        <label value="@init(labels.edit_calculation_data_actuality)"/>
+                                        <datebox format="${labels.date_format}" width="140px" disabled="@load(not vm.edit)"
+                                                 value="@bind(vm.calculation.dataActuality) @converter('ru.masterdm.crs.web.util.converter.DateTimeConverter')"/>
+                                    </row>
+                                    <row>
+                                        <label value="@init(labels.edit_calculation_type)"/>
+                                        <hlayout spacing="40px">
+                                            <forEach items="@init(vm.profiles)" var="profile" varStatus="profileStatus">
+                                                <radio radiogroup="radioGroupProfile" selected="@load(vm.calculation.profiles.size() eq vm.profiles.size()
+                                                ? (profile.key eq 'EXPERT' ? true : false) : (profile.key eq 'RATED' ? true : false))"
+                                                       label="@init(profile.getAttribute(vm.getCalculationProfileAttributeKey('NAME')).getValue(sessionScope.userProfile.locale))"
+                                                       disabled="@load(not empty vm.calculation.id or not vm.edit)"
+                                                       onClick="@command('changeProfile', selected=profile)"/>
+                                            </forEach>
+                                        </hlayout>
+                                    </row>
+                                    <row visible="@load(empty vm.calculation.id)">
+                                        <vlayout>
+                                            <separator/>
+                                            <button label="@load(labels.create_button)" onClick="@command('saveCalculation')"
+                                                    sclass="button-create-calculation"/>
+                                        </vlayout>
+                                        <div/>
+                                    </row>
+                                    <row visible="@load(not empty vm.calculation.id)">
+                                        <label value="@init(labels.edit_calculation_results)"/>
+                                        <div/>
+                                    </row>
+                                    <row visible="@load(not empty vm.calculation.id)">
+                                        <cell colspan="2">
+                                            <grid model="@load(vm.masterFormulas)" sclass="formula_results">
+                                                <columns>
+                                                    <column label="${labels.name}" width="270px"/>
+                                                    <forEach items="@load(vm.calculation.profiles)" var="profile" varStatus="profileStatus">
+                                                        <column label="@init(vm.getValueLabel(profile))" width="150px" align="right"/>
+                                                        <column label=" " width="120px"/>
+                                                    </forEach>
+                                                </columns>
+                                                <template name="model">
+                                                    <row>
+                                                        <label value="@load(each.name.getDescription(sessionScope.userProfile.locale))"
+                                                               tooltiptext="@load(each.name.getDescription(sessionScope.userProfile.locale))"
+                                                               sclass="main_formula_card"/>
+
+                                                        <forEach items="@load(vm.calculation.profiles)" var="profile" varStatus="profileStatus">
+                                                            <label value="@load(each.getFormulaResult(vm.calculation, profile).getResult(each))"
+                                                                   sclass="main_formula_card"
+                                                                   tooltiptext="@load(each.getFormulaResult(vm.calculation, profile).getResult(each))"/>
+                                                            <div>
+                                                                <button onClick="@command('showDetailInfo', text=each.getFormulaResult(vm.calculation, profile).output, title=labels.edit_calculation_view_output)"
+                                                                        visible="@init(not empty each.getFormulaResult(vm.calculation, profile).output)"
+                                                                        autodisable="self" iconSclass="z-icon-code z-icon-lg"
+                                                                        sclass="button-icon calculation_output"
+                                                                        tooltiptext="@init(labels.edit_calculation_view_output)"/>
+                                                                <button onClick="@command('showDetailInfo', text=each.getFormulaResult(vm.calculation, profile).exception, title=labels.edit_calculation_view_exception)"
+                                                                        visible="@init(not empty each.getFormulaResult(vm.calculation, profile).exception)"
+                                                                        autodisable="self" iconSclass="z-icon-exclamation z-icon-lg"
+                                                                        sclass="button-icon exception"
+                                                                        tooltiptext="@init(labels.edit_calculation_view_exception)"/>
+                                                            </div>
+                                                        </forEach>
+                                                    </row>
+                                                </template>
+                                            </grid>
+                                        </cell>
+                                    </row>
+                                </rows>
+                            </grid>
+                        </vlayout>
+                    </tabpanel>
+                    <tabpanel visible="@load(not empty vm.calculation.id)">
+                        <tabbox id="excelForms" model="@load(vm.excelForms)" vflex="1" sclass="global-filter"
+                                selectedTab="@save(vm.selectedForm)">
+                            <template name="model:tab">
+                                <tab label="@load(each.formTemplate.name.getDescription(sessionScope.userProfile.locale))"/>
+                            </template>
+                            <template name="model:tabpanel">
+                                <tabpanel>
+                                    <vlayout vflex="1" hflex="1">
+                                        <hlayout if="${each.formInstances.size() > 1}">
+                                            <forEach items="@load(each.formInstances)" var="formInstance" varStatus="formInstanceStatus">
+                                                <button sclass="@load(each.selectedDate eq formInstance.date ? 'button-date-selected' : 'button-date')"
+                                                        label="@load(formInstance.date) @converter('ru.masterdm.crs.web.util.converter.DateFormatConverter')"
+                                                        onClick="@command('setFormDate',form=each, date=formInstance.date)"/>
+                                            </forEach>
+                                        </hlayout>
+                                        <spreadsheet book="@bind(each.formInstance.book)" hflex="1" vflex="1" showToolbar="false"
+                                                     showFormulabar="true"
+                                                     maxrows="@load(vm.getMaxRows(each.formInstance.book))"
+                                                     maxcolumns="@load(vm.getMaxColumns(each.formInstance.book))"
+                                                     showSheetbar="true"
+                                                     onCtrlKey="@command('onCtrlKey')"
+                                                     onStopEditing="@command('onCellEdited', formInstance=each.formInstance)"
+                                                     visible="@load(each.formInstance.book ne null)"/>
+                                    </vlayout>
+                                </tabpanel>
+                            </template>
+                        </tabbox>
+                    </tabpanel>
+                    <tabpanel visible="@load(not empty vm.calculation.id)">
+                        <tabbox vflex="1" hflex="1" sclass="global-filter">
+                            <tabs>
+                                <tab label="@init(labels.edit_calculation_classifiers_full)"/>
+                                <tab label="@init(labels.edit_calculation_classifiers_short)" disabled="true"/>
+                            </tabs>
+                            <tabpanels>
+                                <tabpanel>
+                                    <classifiersFull vflex="1"/>
+                                </tabpanel>
+                                <tabpanel>
+
+                                </tabpanel>
+                            </tabpanels>
+                        </tabbox>
+                    </tabpanel>
+                    <tabpanel visible="@load(not empty vm.calculation.id)"
+                              viewModel="@id('ftree') @init('ru.masterdm.crs.web.model.calc.formula.FormulaListViewModel', filterKey='_CALCULATION', calculation=vm.calculation)">
+                        <hbox sizedByContent="true">
+                            <button onClick="@command('editCalculationsFilter')" label="@init(labels.filter_button)"
+                                    iconSclass="z-icon-filter" autodisable="self" sclass="button-link"/>
+                            <chosenbox onClick="@command('editCalculationsFilter')"
+                                       onSelect="@command('deleteCalculationsFilter')"
+                                       model="@bind(ftree.entityFilters)"/>
+                        </hbox>
+                        <separator/>
+                        <tree model="@load(ftree.treeModel)" vflex="1" sclass="formula_results">
+                            <custom-attributes org.zkoss.zul.nativebar="false"/>
+                            <treecols>
+                                <treecol label="@init(ftree.entityMeta.keyAttribute.name.getDescription(sessionScope.userProfile.locale))"
+                                         width="250px"/>
+                                <treecol label="${labels.name}" width="270px"/>
+
+                                <forEach items="@load(vm.calculation.profiles)" var="profile" varStatus="profileStatus">
+                                    <treecol label="@init(vm.getValueLabel(profile))" width="150px" align="right"/>
+                                    <treecol label="" width="120px"/>
+                                </forEach>
+                            </treecols>
+                            <template name="model" var="fm">
+                                <treeitem open="@init(true)">
+                                    <treerow>
+                                        <treecell label="@init(fm.key)" tooltiptext="@init(fm.key)"
+                                                  sclass="${fm.type.name() eq 'MASTER_FORMULA' ? 'main_formula' : ''}
+                                                  ${(fm.precalculatedFormula and empty fm.getFormulaResult(vm.calculation, profile).exception) ? 'precalculated_formula' : ''}"/>
+                                        <treecell label="@init(fm.name.getDescription(sessionScope.userProfile.locale))"
+                                                  sclass="${fm.type.name() eq 'MASTER_FORMULA' ? 'main_formula' : ''}"
+                                                  tooltiptext="@init(fm.name.getDescription(sessionScope.userProfile.locale))"/>
+                                        <forEach items="@load(vm.calculation.profiles)" var="profile" varStatus="profileStatus">
+                                            <treecell label="@init(fm.getFormulaResult(vm.calculation, profile).getResult(fm))"
+                                                      sclass="${fm.type.name() eq 'MASTER_FORMULA' ? 'main_formula' : ''}"
+                                                      tooltiptext="@init(fm.getFormulaResult(vm.calculation, profile).getResult(fm))"/>
+                                            <treecell>
+                                                <button autodisable="self" iconSclass="z-icon-code z-icon-lg" sclass="button-icon calculation_output"
+                                                        tooltiptext="@init(labels.edit_calculation_view_output)"
+                                                        visible="@init(not empty fm.getFormulaResult(vm.calculation, profile).output)"
+                                                        onClick="@command('showDetailInfo', text=fm.getFormulaResult(vm.calculation, profile).output, title=labels.edit_calculation_view_output)"/>
+                                                <button autodisable="self" iconSclass="z-icon-exclamation z-icon-lg" sclass="button-icon exception"
+                                                        tooltiptext="@init(labels.edit_calculation_view_exception)"
+                                                        visible="@init(not empty fm.getFormulaResult(vm.calculation, profile).exception)"
+                                                        onClick="@command('showDetailInfo', text=fm.getFormulaResult(vm.calculation, profile).exception, title=labels.edit_calculation_view_exception)"/>
+                                            </treecell>
+                                        </forEach>
+                                    </treerow>
+                                </treeitem>
+                            </template>
+                        </tree>
+                    </tabpanel>
+                    <tabpanel>
+                        <tabbox id="excelReports" model="@load(vm.excelReports)" vflex="1" sclass="global-filter"
+                                selectedTab="@save(vm.selectedReport)">
+                            <template name="model:tab">
+                                <tab label="@load(each.formTemplate.name.getDescription(sessionScope.userProfile.locale))"/>
+                            </template>
+                            <template name="model:tabpanel">
+                                <tabpanel>
+                                    <spreadsheet book="@bind(each.formInstance.book)" hflex="1" vflex="1" showToolbar="false"
+                                                 showFormulabar="false"
+                                                 maxrows="@load(vm.getMaxRows(each.formInstance.book))"
+                                                 maxcolumns="@load(vm.getMaxColumns(each.formInstance.book))"
+                                                 showSheetbar="true"
+                                                 visible="@load(each.formInstance.book ne null)"/>
+                                </tabpanel>
+                            </template>
+                        </tabbox>
+                    </tabpanel>
+                    <tabpanel/>
+                    <tabpanel visible="@load(not empty vm.calculation.id and not empty vm.calculation.clientGroup)">
+                        <hbox>
+                            <span sclass="z-icon-filter"/>
+                            <textbox instant="true" width="200px" value="@bind(vm.clientGroupClientsSearchString)"
+                                     onChange="@command('changeClientGroupClientsFilter')"/>
+                        </hbox>
+                        <grid model="@bind(vm.selectedClientGroupClients)" vflex="1" mold="paging" pageSize="@load(vm.pageSize)"
+                              sclass="grid-clients">
+                            <custom-attributes org.zkoss.zul.nativebar="false"/>
+                            <columns sizable="true" sclass="sizable">
+                                <column width="30px">
+                                    <checkbox visible="@load(not empty vm.clientGroupClientsSearchString)"
+                                              onCheck="@command('manageClientPresentInCalcClientGroup', include=self.checked)"/>
+                                </column>
+                                <column label="@init(nav.getClientAttributeLabel('NAME'))"/>
+                                <column label="@init(labels.edit_calculation_client_group_client_slx)"/>
+                                <column label="@init(labels.edit_calculation_client_group_client_inn)"/>
+                                <column label="@init(labels.edit_calculation_client_group_client_category)"/>
+                                <column>
+                                    <vlayout spacing="0">
+                                        <label value="@init(nav.getCalculationAttributeAttributeMeta('CLIENT', 'PARTICIPANT').name.getDescription(sessionScope.userProfile.locale))"/>
+                                        <checkbox visible="@load(not empty vm.clientGroupClientsSearchString)"
+                                                  onCheck="@command('setParticipants', checked=self.checked)"/>
+                                    </vlayout>
+                                </column>
+                                <column>
+                                    <vlayout spacing="0">
+                                        <label value="@init(nav.getCalculationAttributeAttributeMeta('CLIENT', 'STATUS').name.getDescription(sessionScope.userProfile.locale))"/>
+                                        <combobox model="@load(vm.calculationClientStatuses)" width="95%"
+                                                  onSelect="@command('setClientsStatus', status=self.selectedItem.value)"
+                                                  visible="@load(not empty vm.clientGroupClientsSearchString)">
+                                            <template name="model" var="status">
+                                                <comboitem label="@load(vm.getCalculationClientStatusName(status))"
+                                                           value="@load(status)"/>
+                                            </template>
+                                        </combobox>
+                                    </vlayout>
+                                </column>
+                                <column label="@init(nav.getCalculationAttributeAttributeMeta('CLIENT', 'COMMENT').name.getDescription(sessionScope.userProfile.locale))"/>
+                            </columns>
+                            <template name="model">
+                                <row>
+                                    <cell>
+                                        <checkbox checked="@load(!vm.getCalculationClientSatelliteAttribute(each, 'EXCLUDED').value)"
+                                                  onCheck="@command('includeClient', client=each, include=self.checked)"
+                                                  tooltiptext="@load(vm.getCalculationClientSatelliteAttribute(each, 'EXCLUDED').value
+                                                  ? labels.edit_calculation_return_client_to_calc_client_group : labels.edit_calculation_remove_client_from_calc_client_group)"/>
+                                    </cell>
+                                    <cell>
+                                        <a onClick="@command('navigateCalculationClient', client=each)" sclass="common_link result-client">
+                                            <label value="@init(each.attributes[nav.getClientAttributeMeta('NAME').key].getValue(sessionScope.userProfile.locale))"/>
+                                        </a>
+                                    </cell>
+                                    <label value="@init(each.key)"/>
+                                    <cell>
+                                        <forEach items="@init(each.attributes[nav.getClientAttributeMeta('CLIENT_INN').key].value)" var="item"
+                                                 varStatus="itemStatus">
+                                            <label value="@init(item.entity.getAttributeValue(nav.getClientInnAttributeKey('TAX_ID')))"/>
+                                        </forEach>
+                                    </cell>
+                                    <cell>
+                                        <forEach items="@init(each.attributes[nav.getClientAttributeMeta('CATEGORY').key].value)" var="item"
+                                                 varStatus="itemStatus">
+                                            <label value="@init(item.entity.getAttribute(nav.getClientCategoryAttributeKey('NAME')).getValue(sessionScope.userProfile.locale))"/>
+                                        </forEach>
+                                    </cell>
+                                    <cell>
+                                        <checkbox checked="@bind(vm.getCalculationClientSatelliteAttribute(each, 'PARTICIPANT').value)"/>
+                                    </cell>
+                                    <cell>
+                                        <combobox selectedItem="@bind(vm.getCalculationClientSatelliteAttribute(each, 'STATUS').value)"
+                                                  model="@load(vm.calculationClientStatuses)" width="95%">
+                                            <template name="model" var="status">
+                                                <comboitem label="@load(vm.getCalculationClientStatusName(status))"
+                                                           value="@load(status)"/>
+                                            </template>
+                                        </combobox>
+                                    </cell>
+                                    <cell>
+                                        <button autodisable="self" iconSclass="z-icon-comment-o" sclass="button-icon"
+                                                tooltiptext="@init(labels.comment)"
+                                                onClick="@command('editText', text=vm.getCalculationClientSatelliteAttribute(each, 'COMMENT'). value, isEdit='true', title=labels.comment, commandOnClose='calculationGroupClientCommentChanged', rowElement=each)"/>
+                                        <label value="@load(vm.getCalculationClientSatelliteAttribute(each, 'COMMENT').value)" width="95%"/>
+                                    </cell>
+                                </row>
+                            </template>
+                        </grid>
+                    </tabpanel>
+
+                </tabpanels>
+            </tabbox>
+        </vbox>
+    </window>
+</zk>

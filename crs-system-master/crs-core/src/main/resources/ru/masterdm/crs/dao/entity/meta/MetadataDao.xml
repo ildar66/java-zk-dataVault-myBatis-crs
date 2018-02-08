@@ -1,0 +1,656 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ru.masterdm.crs.dao.entity.meta.MetadataDao">
+
+    <resultMap id="entityMetaResultMap" type="entityMeta" autoMapping="true">
+        <id property="id" column="id" />
+        <association property="name" columnPrefix="mn_" javaType="multilangDescription" autoMapping="true" />
+        <association property="comment" columnPrefix="cm_" javaType="multilangDescription" autoMapping="true" />
+        <association property="keyName" columnPrefix="kn_" javaType="multilangDescription" autoMapping="true" />
+        <collection property="types" columnPrefix="et_" ofType="entityType" javaType="list">
+            <id column="type" />
+        </collection>
+        <collection property="attributes" columnPrefix="a_" ofType="attributeMeta" resultMap="attributeMetaResultMap" />
+    </resultMap>
+
+    <resultMap id="entityMetaBulkResultMap" type="entityMetaDto" autoMapping="true">
+        <id property="cc" column="$cc" />
+        <collection property="entityMetas" ofType="entityMeta" resultMap="entityMetaResultMap" />
+    </resultMap>
+
+    <resultMap id="attributeMetaResultMap" type="attributeMeta" autoMapping="true">
+        <id property="id" column="id" />
+        <association property="name" columnPrefix="mn_" javaType="multilangDescription" autoMapping="true" />
+    </resultMap>
+
+    <resultMap id="entityAttributeBulkResultMap" type="entityAttributeMetaDto" autoMapping="true">
+        <id property="entityId" column="entity_id" />
+        <collection property="attributes" ofType="attributeMeta" resultMap="attributeMetaResultMap" />
+    </resultMap>
+    <resultMap id="attributeAttributesBulkResultMap" type="attributeAttributesDto" autoMapping="true">
+        <id property="attributeId" column="attribute_id" />
+        <collection property="attributes" columnPrefix="a_" ofType="attributeMeta" resultMap="attributeMetaResultMap" />
+    </resultMap>
+
+    <resultMap id="entityTypeKeyByIdBulkResultMap" type="org.apache.commons.lang3.tuple.MutablePair" autoMapping="true">
+        <id property="left" column="id" javaType="long" jdbcType="NUMERIC"/>
+        <result property="value" column="key" javaType="string"/>
+    </resultMap>
+
+    <resultMap id="entityMetaActionsIdsBulkResultMap" type="org.apache.commons.lang3.tuple.MutablePair" autoMapping="true">
+        <id property="left" column="business_action_id" javaType="long" jdbcType="NUMERIC"/>
+        <result property="value" column="cancel_secext_rule_available" javaType="boolean"/>
+    </resultMap>
+
+
+    <update id="execute">
+        ${sql}
+    </update>
+
+    <select id="getSysTimestamp" resultType="java.time.LocalDateTime">
+        select systimestamp
+          from dual
+    </select>
+
+    <select id="getEntityKeyById" resultType="string">
+        select key
+          from crs_sys_h_entity
+         where id = #{id}
+    </select>
+
+    <select id="getEntityHubIdByKey" resultType="long">
+        select id
+          from crs_sys_h_entity
+         where key = upper(trim(#{key}))
+    </select>
+
+    <select id="getEntityMetaGroupHubIdByKey" resultType="long">
+        select id
+          from crs_sys_h_entity_group
+         where key = upper(trim(#{key}))
+    </select>
+
+    <select id="getAttributeHubIdByKey" resultType="long">
+        select id
+          from crs_sys_h_attribute
+         where key = upper(trim(#{key}))
+    </select>
+
+    <insert id="persistEntity" statementType="CALLABLE">
+        declare
+            v_ldts timestamp := systimestamp;
+            v_entity_hub_id number;
+            v_attribute_hub_id number;
+            v_link_entity_key crs_sys_s_attribute.entity_key%type;
+            v_multilang number(1) := 0;
+            v_link_table varchar2(30);
+            v_attribute_type varchar2(100);
+            v_native_column varchar2(30);
+            v_default_value varchar2(4000);
+
+            v_current_id number;
+            v_current_ldts timestamp;
+        begin
+            v_current_id := #{entityMeta.id};
+            v_current_ldts := #{entityMeta.ldts};
+            v_entity_hub_id := #{entityMeta.hubId};
+
+            <choose>
+                <when test="entityMeta.id == null">
+            insert into crs_sys_h_entity (id, key, ldts)
+            values (crs_sys_h_entity_seq.nextval, upper(trim(#{entityMeta.key})), v_ldts);
+
+            v_current_ldts := v_ldts;
+            v_link_table := crs_pkg.generate_link_table_name();
+            v_entity_hub_id := crs_sys_h_entity_seq.currval;
+                </when>
+
+                <otherwise>
+                    <!-- user cannot change immutable values -->
+            select e.link_table, e.h_id
+              into v_link_table, v_entity_hub_id
+              from crs_sys_s_entity e
+             where e.id = v_current_id;
+                </otherwise>
+            </choose>
+
+        <!-- insert entity meta data (if changed) -->
+            insert into crs_sys_s_entity (id, h_id, ldts, form, name_ru, name_en, comment_ru, comment_en, link_table, attribute_key, hierarchical,
+                                          view_order)
+            select crs_sys_s_entity_seq.nextval, v_entity_hub_id, v_ldts, #{entityMeta.form, jdbcType=VARCHAR},
+                   #{entityMeta.name.descriptionRu, jdbcType=VARCHAR}, #{entityMeta.name.descriptionEn, jdbcType=VARCHAR},
+                   #{entityMeta.comment.descriptionRu, jdbcType=VARCHAR}, #{entityMeta.comment.descriptionEn, jdbcType=VARCHAR},
+                   v_link_table, #{entityMeta.attributeKey, jdbcType=VARCHAR}, #{entityMeta.hierarchical}, #{entityMeta.viewOrder}
+              from dual
+             where not exists (select 1
+                                 from crs_sys_s_entity e
+                                where e.id = v_current_id
+                                  and 1 = decode(e.form, #{entityMeta.form, jdbcType=VARCHAR}, 1, 0)
+                                  and 1 = decode(e.name_ru, #{entityMeta.name.descriptionRu, jdbcType=VARCHAR}, 1, 0)
+                                  and 1 = decode(e.name_en, #{entityMeta.name.descriptionEn, jdbcType=VARCHAR}, 1, 0)
+                                  and 0 = dbms_lob.compare(nvl(e.comment_ru, 'null'), nvl(#{entityMeta.comment.descriptionRu, jdbcType=CLOB}, 'null'))
+                                  and 0 = dbms_lob.compare(nvl(e.comment_en, 'null'), nvl(#{entityMeta.comment.descriptionEn, jdbcType=CLOB}, 'null'))
+                                  and 1 = decode(e.attribute_key, #{entityMeta.attributeKey, jdbcType=VARCHAR}, 1, 0)
+                                  and 1 = decode(e.hierarchical, #{entityMeta.hierarchical, jdbcType=NUMERIC}, 1, 0)
+                                  and 1 = decode(e.view_order, #{entityMeta.viewOrder, jdbcType=NUMERIC}, 1, 0));
+
+            if sql%rowcount = 1 then
+                v_current_id := crs_sys_s_entity_seq.currval;
+                v_current_ldts := v_ldts;
+            end if;
+
+            #{entityMeta.id, javaType=long, jdbcType=NUMERIC, mode=OUT} := v_current_id;
+            #{entityMeta.hubId, javaType=long, jdbcType=NUMERIC, mode=OUT} := v_entity_hub_id;
+            #{entityMeta.ldts, javaType=java.time.LocalDateTime, jdbcType=TIMESTAMP, mode=OUT} := v_current_ldts;
+            #{entityMeta.linkTable, javaType=string, jdbcType=VARCHAR, mode=OUT} := v_link_table;
+
+        <!-- logical removing unactual entity meta types -->
+            insert into crs_sys_l_entity_type (id, entity_type_id, entity_id, ldts, removed)
+            select crs_sys_l_entity_type_seq.nextval, t.entity_type_id, t.entity_id, v_ldts, 1
+              from (select etl.entity_type_id, etl.entity_id, row_number() over (partition by etl.entity_id, etl.entity_type_id order by etl.ldts desc) rn
+                      from crs_sys_l_entity_type etl
+                     where etl.entity_id = v_entity_hub_id
+                       and etl.removed = 0
+                       and etl.entity_type_id not in (select et.id
+                                                  from crs_sys_h_entity_type et
+                                                 where et.key in
+        <foreach collection="entityMeta.types" item="type" separator="," open="(" close=")">
+                                                                 #{type}
+        </foreach>
+                                             )
+                   ) t
+             where t.rn = 1;
+
+        <!-- insert actual entity meta types (if really new) -->
+            merge into crs_sys_l_entity_type etl
+                 using (select et.id entity_type_id, v_entity_hub_id entity_id
+                          from crs_sys_h_entity_type et
+                         where et.key in
+        <foreach collection="entityMeta.types" item="type" separator="," open="(" close=")">
+                                         #{type}
+        </foreach>
+
+                       ) z
+                    on (etl.entity_id = z.entity_id
+                        and etl.removed = 0
+                        and etl.entity_type_id = z.entity_type_id
+                        and etl.id in (select t.id
+                                         from (select etl1.id,
+                                                      row_number() over(partition by etl1.entity_id, etl1.entity_type_id order by etl1.ldts desc) rn
+                                                 from crs_sys_l_entity_type etl1
+                                                where etl1.entity_type_id in (select et.id
+                                                                          from crs_sys_h_entity_type et
+                                                                         where et.key in
+        <foreach collection="entityMeta.types" item="type" separator="," open="(" close=")">
+                                                                                         #{type}
+        </foreach>
+                                                                       )
+                                                  and etl1.entity_id = v_entity_hub_id) t
+                                        where t.rn = 1))
+
+                  when not matched then
+                       insert (id, entity_type_id, entity_id, ldts)
+                       values (crs_sys_l_entity_type_seq.nextval, z.entity_type_id, z.entity_id, v_ldts);
+
+        <!-- insert attribute meta data (if changed) -->
+        <foreach collection="entityMeta.attributes" item="attribute" index="index">
+            v_current_id := #{attribute.id};
+            v_current_ldts := #{attribute.ldts};
+            v_default_value := #{attribute.defaultValue};
+
+            <choose>
+                <when test="attribute.id == null">
+
+            insert into crs_sys_h_attribute (id, key, ldts)
+            values (crs_sys_h_attribute_seq.nextval, upper(trim(#{attribute.key})), v_ldts);
+
+            v_current_ldts := v_ldts;
+            v_attribute_hub_id := crs_sys_h_attribute_seq.currval;
+            v_link_entity_key := #{attribute.entityKey};
+            v_attribute_type := #{attribute.type};
+            v_native_column := #{attribute.nativeColumn};
+
+                    <choose>
+                        <when test="(attribute.type.name() == 'STRING' or attribute.type.name() == 'TEXT') and attribute.multilang">
+            v_multilang := 1;
+            v_link_table := crs_pkg.generate_link_table_name();
+            v_native_column := null;
+            #{entityMeta.attributes[${index}].link, javaType=boolean, jdbcType=NUMERIC, mode=OUT} := 1;
+                        </when>
+
+                        <when test="attribute.type.name() == 'FILE' or attribute.type.name() == 'REFERENCE'">
+            v_multilang := 0;
+            v_link_table := crs_pkg.generate_link_table_name();
+            v_native_column := null;
+            v_default_value := null;
+            #{entityMeta.attributes[${index}].link, javaType=boolean, jdbcType=NUMERIC, mode=OUT} := 1;
+                        </when>
+
+                        <otherwise>
+            if v_native_column is null then
+                raise_application_error(-20000, 'native column for attribute ' || #{attribute.key} || ' does not set' );
+            end if;
+            v_multilang := 0;
+            v_link_table := null;
+                        </otherwise>
+                    </choose>
+                </when>
+
+                <otherwise>
+                    <!-- user cannot change immutable values -->
+            select a.link_table, a.multilang, a.entity_key, a.h_id, a.type, a.native_column
+              into v_link_table, v_multilang, v_link_entity_key, v_attribute_hub_id, v_attribute_type, v_native_column
+              from crs_sys_s_attribute a
+             where a.id = v_current_id;
+
+                </otherwise>
+            </choose>
+
+            insert into crs_sys_s_attribute (id, h_id, ldts, name_ru, name_en, view_order, link_table, entity_key, attribute_key, nullable, multilang,
+                                             filter_available, type, native_column, default_value)
+            select crs_sys_s_attribute_seq.nextval, v_attribute_hub_id, v_ldts, #{attribute.name.descriptionRu, jdbcType=VARCHAR},
+                   #{attribute.name.descriptionEn, jdbcType=VARCHAR}, #{attribute.viewOrder}, v_link_table, v_link_entity_key,
+                   #{attribute.attributeKey}, #{attribute.nullable}, v_multilang, #{attribute.filterAvailable}, v_attribute_type, v_native_column,
+                   v_default_value
+              from dual
+             where not exists (select 1
+                                 from crs_sys_s_attribute a
+                                where a.id = v_current_id
+                                  and a.view_order = #{attribute.viewOrder}
+                                  and a.nullable = #{attribute.nullable}
+                                  and 1 = decode(a.name_ru, #{attribute.name.descriptionRu, jdbcType=VARCHAR}, 1, 0)
+                                  and 1 = decode(a.name_en, #{attribute.name.descriptionEn, jdbcType=VARCHAR}, 1, 0)
+                                  and 1 = decode(a.attribute_key, #{attribute.attributeKey, jdbcType=VARCHAR}, 1, 0)
+                                  and a.filter_available = #{attribute.filterAvailable}
+                                  and 1 = decode(a.default_value, v_default_value, 1, 0));
+
+            if sql%rowcount = 1 then
+                v_current_id := crs_sys_s_attribute_seq.currval;
+                v_current_ldts := v_ldts;
+            end if;
+
+            #{entityMeta.attributes[${index}].id, javaType=long, jdbcType=NUMERIC, mode=OUT} := v_current_id;
+            #{entityMeta.attributes[${index}].hubId, javaType=long, jdbcType=NUMERIC, mode=OUT} := v_attribute_hub_id;
+            #{entityMeta.attributes[${index}].linkTable, javaType=string, jdbcType=VARCHAR, mode=OUT} := v_link_table;
+            #{entityMeta.attributes[${index}].multilang, javaType=boolean, jdbcType=NUMERIC, mode=OUT} := v_multilang;
+            #{entityMeta.attributes[${index}].ldts, javaType=java.time.LocalDateTime, jdbcType=TIMESTAMP, mode=OUT} := v_current_ldts;
+            #{entityMeta.attributes[${index}].entityKey, javaType=string, jdbcType=VARCHAR, mode=OUT} := v_link_entity_key;
+            #{entityMeta.attributes[${index}].type, javaType=attributeType, jdbcType=VARCHAR, mode=OUT} := v_attribute_type;
+            #{entityMeta.attributes[${index}].nativeColumn, javaType=string, jdbcType=VARCHAR, mode=OUT} := v_native_column;
+            #{entityMeta.attributes[${index}].defaultValue, javaType=string, jdbcType=VARCHAR, mode=OUT} := v_default_value;
+        </foreach>
+
+        <!-- logical removing unactual links between entity and attributes -->
+            insert into crs_sys_l_entity_attribute (id, entity_id, attribute_id, ldts, removed)
+            select crs_sys_l_entity_attribute_seq.nextval, t.entity_id, t.attribute_id, v_ldts, 1
+              from (select eal.entity_id, eal.attribute_id, row_number() over (partition by eal.entity_id, eal.attribute_id order by eal.ldts desc) rn
+                      from crs_sys_l_entity_attribute eal
+                     where eal.entity_id = v_entity_hub_id
+                       and eal.removed = 0
+                       and eal.attribute_id not in (select a.id
+                                                      from crs_sys_h_attribute a
+                                                     where a.key in
+        <foreach collection="entityMeta.attributes" item="attribute" separator="," open="(" close=")">
+                                                                    #{attribute.key}
+        </foreach>
+                                                   )
+                   ) t
+             where t.rn = 1;
+
+        <!-- insert actual links between entity and attributes (if really new) -->
+            merge into crs_sys_l_entity_attribute eal
+                 using (select a.id attribute_id, v_entity_hub_id entity_id
+                          from crs_sys_h_attribute a
+                         where a.key in
+        <foreach collection="entityMeta.attributes" item="attribute" separator="," open="(" close=")">
+                                        #{attribute.key}
+        </foreach>
+
+                       ) z
+                    on (eal.entity_id = z.entity_id
+                        and eal.removed = 0
+                        and eal.attribute_id = z.attribute_id
+                        and eal.id in (select t.id
+                                         from (select eal1.id,
+                                                      row_number() over(partition by eal1.entity_id, eal1.attribute_id order by eal1.ldts desc) rn
+                                                 from crs_sys_l_entity_attribute eal1
+                                                where eal1.attribute_id in (select a.id
+                                                                              from crs_sys_h_attribute a
+                                                                             where a.key in
+        <foreach collection="entityMeta.attributes" item="attribute" separator="," open="(" close=")">
+                                                                                            #{attribute.key}
+        </foreach>
+                                                                       )
+                                                  and eal1.entity_id = v_entity_hub_id) t
+                                        where t.rn = 1))
+
+                  when not matched then
+                       insert (id, attribute_id, entity_id, ldts)
+                       values (crs_sys_l_entity_attribute_seq.nextval, z.attribute_id, z.entity_id, v_ldts);
+        end;
+    </insert>
+
+    <insert id="removeEntity">
+        insert into crs_sys_s_entity (id, h_id, ldts, form, name_ru, name_en, comment_ru, comment_en, link_table, attribute_key, hierarchical,
+                                      view_order, removed)
+        select crs_sys_s_entity_seq.nextval, e.h_id, systimestamp, e.form, e.name_ru, e.name_en, e.comment_ru, e.comment_en, e.link_table, e.attribute_key, e.hierarchical,
+               e.view_order, 1
+          from crs_sys_s_entity e
+         where e.id = #{entityId}
+    </insert>
+
+    <select id="getEntityByKey" resultMap="entityMetaResultMap">
+        select <!--entity-->
+               e.id, e.h_id hubId, #{entityKey} key, e.ldts, e.removed, e.form, e.link_table, e.attribute_key, e.hierarchical, e.view_order,
+               e.name_ru mn_descriptionRu, e.name_en mn_descriptionEn, e.comment_ru cm_descriptionRu, e.comment_en cm_descriptionEn,
+               e.key_name_en kn_descriptionEn, e.key_name_ru kn_descriptionRu,
+               <!--entity type-->
+               et.key et_type,
+               <!--attributes-->
+               a.id a_id, a.h_id a_hubId, a.key a_key, a.ldts a_ldts, a.removed a_removed, a.view_order a_viewOrder, a.link_table a_linkTable,
+               a.entity_key a_entityKey, a.attribute_key a_attributeKey, a.nullable a_nullable, a.multilang a_multilang, a.link a_link,
+               a.filter_available a_filter_available, a.native_column a_native_column, a.type a_type, a.default_value a_default_value,
+               a.name_ru a_mn_descriptionRu, a.name_en a_mn_descriptionEn
+          from (<!--attributes selection-->
+                select a1.id, a1.h_id, ah.key, a1.ldts, a1.view_order, a1.nullable, a1.multilang, a1.link_table, a1.attribute_key, a1.link,
+                       a1.name_ru, a1.name_en, a1.filter_available, a1.native_column, a1.entity_key, a1.removed, eal.entity_id, a1.type, a1.default_value,
+                       row_number() over (partition by a1.h_id order by a1.ldts desc) rn
+                  from crs_sys_s_attribute a1 join (<!--select only actual attributes by entity key from entity-attribute link table-->
+                                                    select eal1.*
+                                                      from (select eal11.entity_id, eal11.attribute_id, eal11.removed,
+                                                                   row_number() over (partition by eal11.entity_id, eal11.attribute_id
+                                                                                          order by eal11.ldts desc) rn
+                                                              from crs_sys_l_entity_attribute eal11
+                                                             where eal11.entity_id = (select eh.id
+                                                                                        from crs_sys_h_entity eh
+                                                                                       where eh.key = #{entityKey})
+                                                               and eal11.ldts &lt;= #{ldts}
+                                                           ) eal1
+                                                     where eal1.rn = 1
+                                                       and eal1.removed = 0
+                                                   ) eal on eal.attribute_id = a1.h_id
+                                              join crs_sys_h_attribute ah on ah.id = a1.h_id
+                 where a1.ldts &lt;= #{ldts}
+               ) a join (<!--select only actual entity metadata by entity key from entity satellite table-->
+                         select e1.*
+                           from (select e11.id, e11.h_id, e11.ldts, e11.form, e11.name_ru, e11.name_en, e11.comment_ru, e11.comment_en,
+                                        e11.key_name_en, e11.key_name_ru,
+                                        e11.link_table, e11.attribute_key, e11.hierarchical, e11.view_order, e11.removed,
+                                        row_number() over (partition by e11.h_id order by e11.ldts desc) rn
+                                   from crs_sys_s_entity e11
+                                  where e11.h_id = (select eh.id
+                                                      from crs_sys_h_entity eh
+                                                     where eh.key = upper(trim(#{entityKey})))
+                                    and e11.ldts &lt;= #{ldts}
+                                ) e1
+                          where e1.rn = 1
+                            and e1.removed = 0
+                        ) e on e.h_id = a.entity_id
+                   join (<!--select only actual entity type from entity-type link table-->
+                         select et1.*
+                           from (select et11.id, et11.key, et11.ldts, etl.entity_id, etl.removed,
+                                        row_number() over (partition by etl.entity_id, etl.entity_type_id order by etl.ldts desc) rn
+                                   from crs_sys_l_entity_type etl join crs_sys_h_entity_type et11 on et11.id = etl.entity_type_id
+                                  where etl.entity_id = (select eh.id
+                                                           from crs_sys_h_entity eh
+                                                          where eh.key = upper(trim(#{entityKey})))
+                                    and etl.ldts &lt;= #{ldts}
+                                ) et1
+                          where et1.rn = 1
+                            and et1.removed = 0
+                        ) et on et.entity_id = e.h_id
+         where a.rn = 1
+           and a.removed = 0
+         order by a.view_order, a.key
+    </select>
+
+    <select id="getRefAttributeAttributes" resultMap="attributeAttributesBulkResultMap">
+        select l.attribute_id, a.h_id,
+               a.id a_id, a.h_id a_hubId, a.key a_key, a.ldts a_ldts, a.removed a_removed, a.view_order a_viewOrder, a.link_table a_linkTable,
+               a.entity_key a_entityKey, a.attribute_key a_attributeKey, a.nullable a_nullable, a.multilang a_multilang, a.link a_link,
+               a.filter_available a_filter_available, a.native_column a_native_column, a.type a_type, a.default_value a_default_value,
+               a.name_ru a_mn_descriptionRu, a.name_en a_mn_descriptionEn
+          from (
+              select l.attribute_id,
+                     l.attr_attribute_id,
+                     l.removed,
+                     row_number() over(partition by l.attribute_id, l.attr_attribute_id order by l.ldts desc) rn$
+              from crs_sys_l_ref_attribute l
+              where l.ldts &lt;= #{ldts}
+              and attribute_id in
+        <foreach collection="attributeIds" item="attributeId" open="(" separator="," close=")">
+              #{attributeId}
+        </foreach>
+            ) l join
+            (select h.key, s.*,
+                    row_number() over (partition by s.h_id order by s.ldts desc) rn$
+               from crs_sys_h_attribute h join crs_sys_s_attribute s on h.id = s.h_id and s.ldts &lt;= #{ldts}
+            ) a on l.attr_attribute_id = a.h_id
+            where l.rn$ = 1 and l.removed = 0 and a.rn$ = 1 and a.removed = 0
+    </select>
+
+    <select id="getEntities" resultMap="entityMetaBulkResultMap">
+        <if test="rowRange != null">
+        select *
+          from (
+        </if>
+                select
+        <if test="rowRange != null">
+                       /*+ first_rows(${rowRange.endRow}) */
+        </if>
+                       <!--entity-->
+                       e.id, e.h_id hubId, e.key, e.ldts, e.removed, e.form, e.link_table, e.attribute_key, e.hierarchical, e.view_order,
+                       e.name_ru mn_descriptionRu, e.name_en mn_descriptionEn, e.comment_ru cm_descriptionRu, e.comment_en cm_descriptionEn,
+                       <!--entity type-->
+                       et.et_type et_type,
+        <if test="rowRange != null">
+                       count(1) over () "$cc", <!-- kind of "analytical count" -->
+        </if>
+        <if test="rowRange == null">
+                        0 "$cc", <!-- just value for id -->
+        </if>
+        <choose>
+            <when test="criteria != null and criteria.orderDefined">
+                       row_number() over (order by ${criteria.order.text}) "$nn"
+            </when>
+            <otherwise>
+                       rownum "$nn"
+            </otherwise>
+        </choose>
+                  from (select e1.id, e1.h_id, eh.key, e1.ldts, e1.form, e1.name_ru, e1.name_en, e1.comment_ru, e1.comment_en, e1.link_table, e1.attribute_key,
+                               e1.hierarchical, e1.view_order, e1.removed,
+                               row_number() over (partition by e1.h_id order by e1.ldts desc) rn
+                          from crs_sys_s_entity e1 join crs_sys_h_entity eh on eh.id = e1.h_id
+                                                                           and e1.ldts &lt;= #{ldts}
+        <if test="criteria != null and criteria.hubIdsAndLdts != null">
+            <foreach collection="criteria.hubIdsAndLdts" item="hubLdts" index="hubId" open=" join (select * from table(crs_pair_nts_a(crs_pair_nts("
+                     separator="),crs_pair_nts(" close=")))) t on t.n = e1.h_id and e1.ldts &lt;= t.ts">
+                               #{hubId}, #{hubLdts}
+            </foreach>
+        </if>
+        <where>
+            <if test="criteria != null and criteria.hubIds != null">
+                <foreach item="id" collection="criteria.hubIds" open=" e1.h_id in (" separator="," close=")">
+                               #{id}
+                </foreach>
+            </if>
+            <if test="criteria != null and !criteria.strictLatestActualRecord and criteria.whereDefined">
+                      and (${criteria.where.text})
+            </if>
+        </where>
+                       ) e join (<!--select only actual entity type from entity-type link table-->
+                                 select et1.*
+                                   from (select et11.id, et11.key et_type, et11.ldts, etl.entity_id, etl.removed,
+                                                row_number() over (partition by etl.entity_id, etl.entity_type_id order by etl.ldts desc) rn
+                                           from crs_sys_l_entity_type etl join crs_sys_h_entity_type et11 on et11.id = etl.entity_type_id
+                                          where et11.key in
+        <foreach collection="types" item="type" separator="," open="(" close=")">
+                                                           #{type}
+        </foreach>
+                                            and etl.ldts &lt;= #{ldts}
+                                        ) et1
+                                  where et1.rn = 1
+                                    and et1.removed = 0
+                                ) et on et.entity_id = e.h_id
+                 where e.rn = 1
+                   and e.removed = 0
+        <if test="criteria != null and criteria.strictLatestActualRecord and criteria.whereDefined">
+                   and (${criteria.where.text})
+        </if>
+        <if test="criteria != null and criteria.orderDefined">
+                 order by ${criteria.order.text}
+        </if>
+        <if test="rowRange != null">
+               )
+         where "$nn" between #{rowRange.startRow} and #{rowRange.endRow}
+        </if>
+    </select>
+
+    <select id="getAttributeMeta" resultMap="entityAttributeBulkResultMap">
+        select entity_id,
+               <!--attributes-->
+               a.id, a.h_id hub_id, a.key, a.ldts, a.removed, a.view_order, a.link_table,
+               a.entity_key, a.attribute_key, a.nullable, a.multilang, a.link,
+               a.filter_available, a.native_column, a.type,
+               a.name_ru mn_descriptionRu, a.name_en mn_descriptionEn,
+               a.default_value
+          from (<!--attributes selection-->
+                select a.*, l.entity_id
+                  from (select a1.id, a1.h_id hh_id, ah.id h_id, ah.key, a1.ldts, a1.view_order, a1.nullable, a1.multilang, a1.link_table, a1.attribute_key, a1.link,
+                               a1.name_ru, a1.name_en, a1.filter_available, a1.native_column, a1.entity_key, a1.removed, a1.type, a1.default_value,
+                               row_number() over (partition by a1.h_id order by a1.ldts desc) rn
+                          from crs_sys_s_attribute a1 join crs_sys_h_attribute ah on ah.id = a1.h_id
+                         where a1.ldts &lt;= #{ldts}
+                       ) a join (select eal11.entity_id, eal11.attribute_id, eal11.removed,
+                                        row_number() over (partition by eal11.entity_id, eal11.attribute_id order by eal11.ldts desc) rn
+                                   from crs_sys_l_entity_attribute eal11
+        <if test="entityIdsAndLdts != null">
+                                                                         join (select *
+                                                                                 from table(crs_pair_nts_a(crs_pair_nts(
+            <foreach collection="entityIdsAndLdts" item="hubLdts" index="hubId" separator="),crs_pair_nts(">
+                                                                                                                        #{hubId}, #{hubLdts}
+            </foreach>
+                                                                                            )))) t on t.n = eal11.entity_id
+                                                                                                  and eal11.ldts &lt;= t.ts
+        </if>
+        <if test="entityIds != null">
+                                  where eal11.ldts &lt;= #{ldts}
+                                    and eal11.entity_id in
+            <foreach collection="entityIds" item="entityId" open="(" separator="," close=")">
+                                                           #{entityId}
+            </foreach>
+        </if>
+                                ) l on l.attribute_id = a.h_id
+                                   and l.rn = 1
+                                   and l.removed = 0
+                                   and a.rn = 1
+                                   and a.removed = 0
+               ) a
+         order by a.view_order, a.key
+    </select>
+
+    <select id="getEntityTypeKeyById" resultMap="entityTypeKeyByIdBulkResultMap">
+        select id, key
+          from crs_sys_h_entity_type
+    </select>
+
+    <select id="getEntityTypeIdByKey" resultType="long">
+        select id
+          from crs_sys_h_entity_type
+         where key = #{key}
+    </select>
+
+    <select id="getReferencedByHubIds" resultType="long">
+        <![CDATA[
+        with ea as (select h_id
+                      from (select ea.h_id, removed, ea.entity_key,
+                                   row_number() over (partition by ea.h_id order by ea.ldts desc) rn
+                              from crs_sys_s_attribute ea
+                             where ea.ldts <= #{ldts}
+                           )
+                     where removed = 0
+                       and rn = 1
+                       and entity_key = #{key}
+        ), eal as (select entity_id, attribute_id
+                     from (select entity_id, attribute_id, removed,
+                                  row_number() over (partition by eal.entity_id, eal.attribute_id order by eal.ldts desc) rn
+                             from crs_sys_l_entity_attribute eal
+                            where ldts <= #{ldts}
+                              and not eal.entity_id in (select id from crs_sys_h_entity e where e.key = 'ENTITY_GROUP')
+                          )
+                    where rn = 1
+                      and removed = 0
+                  )
+        select distinct eal.entity_id
+          from ea join eal on ea.h_id = eal.attribute_id
+        ]]>
+    </select>
+
+    <select id="getEntityTimeSlices" resultType="java.time.LocalDateTime">
+        with e as (
+            select eh.key, es.h_id, es.ldts
+              from crs_sys_h_entity eh join crs_sys_s_entity es on es.h_id = eh.id
+             where eh.key = #{entityKey}
+        ),
+        al as (
+            select e.key, lea.attribute_id, lea.ldts
+              from crs_sys_l_entity_attribute lea join e on e.h_id = lea.entity_id
+        ),
+        a as (
+            select al.key, ats.h_id, ats.ldts
+              from crs_sys_h_attribute ath join crs_sys_s_attribute ats on ats.h_id = ath.id
+                                           join al on al.attribute_id = ath.id
+        ),
+        aal as (
+            select a.key, raal.attr_attribute_id, raal.ldts
+              from crs_sys_l_ref_attribute raal join a on a.h_id = raal.attribute_id
+        ),
+        aa as (
+            select aal.key, ats.h_id, ats.ldts
+              from crs_sys_h_attribute ath join crs_sys_s_attribute ats on ats.h_id = ath.id
+                                           join aal on aal.attr_attribute_id = ath.id
+        ),
+        et as (
+            select e.key, l.ldts
+              from crs_sys_l_entity_type l join e on l.entity_id = e.h_id
+        ),
+        dts as (
+            select ldts from e
+             union
+            select ldts from al
+             union
+            select ldts from a
+             union
+            select ldts from aal
+             union
+            select ldts from aa
+             union
+            select ldts from et
+        )
+        select distinct ldts
+          from dts
+         order by ldts desc
+    </select>
+
+    <select id="getEntityMetaActionsIds" resultMap="entityMetaActionsIdsBulkResultMap">
+        select business_action_id, cancel_secext_rule_available
+          from (select business_action_id,
+                       id link_id,
+                       removed,
+                       row_number() over (partition by entity_id, business_action_id order by ldts desc) rn
+                  from crs_sys_l_entity_business_action
+                 where ldts &lt;= #{ldts}
+                   and entity_id = #{entityMeta.hubId}) l left outer join (select link_id,
+                                                                                  cancel_secext_rule_available,
+                                                                                  removed,
+                                                                                  row_number() over (partition by link_id order by ldts desc) rn
+                                                                             from crs_sys_l_s_entity_business_action
+                                                                            where ldts &lt;= #{ldts}) ls on ls.link_id = l.link_id
+                                                                                                     and ls.removed = 0
+                                                                                                     and ls.rn = 1
+         where l.removed = 0
+           and l.rn = 1
+    </select>
+</mapper>

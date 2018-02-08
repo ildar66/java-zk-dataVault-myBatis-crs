@@ -1,0 +1,82 @@
+{
+  "objects": [
+    {
+      "updateOption": true,
+      "name": "name-name-name",
+      "repeat": "DOWN",
+      "createOption": "ALWAYS",
+      "entityMetaKey": "PERSIST_TEST_CHILD",
+      "fields": [
+        {
+          "key": false,
+          "mapped": true,
+          "range": {
+            "sheet": "Sheet-Name1",
+            "row": 1,
+            "column": 1,
+            "lastRow": 5,
+            "lastColumn": 4,
+            "ref": "Ref-ref-to",
+            "sheetIndex": 2
+          },
+          "write": true,
+          "attributeMetaKey": "PERSIST_TEST_CHILD#STRING",
+          "value": "string-test-value"
+        },
+        {
+          "key": false,
+          "mapped": true,
+          "write": true,
+          "attributeMetaKey": "PERSIST_TEST_CHILD#STRINGML",
+          "value": "string-test-value-ml"
+        }
+      ]
+    },
+    {
+      "updateOption": true,
+      "name": "name-name-name2",
+      "repeat": "RIGHT",
+      "createOption": "IF_NOT_EXISTS",
+      "entityMetaKey": "PERSIST_TEST_CHILD",
+      "fields": [
+        {
+          "key": false,
+          "mapped": true,
+          "range": {
+            "sheet": "Sheet-Name2",
+            "row": 1,
+            "column": 1,
+            "lastRow": 50,
+            "lastColumn": 40,
+            "ref": "Ref-ref-to222",
+            "sheetIndex": 20
+          },
+          "write": true,
+          "attributeMetaKey": "PERSIST_TEST_CHILD#BOOLEAN",
+          "value": "false"
+        },
+        {
+          "key": false,
+          "mapped": true,
+          "write": true,
+          "attributeMetaKey": "PERSIST_TEST_CHILD#NUMBER",
+          "value": "100.500"
+        },
+        {
+          "key": false,
+          "mapped": true,
+          "write": true,
+          "attributeMetaKey": "PERSIST_TEST_CHILD#DATE",
+          "value": "2011-12-03"
+        },
+        {
+          "key": false,
+          "mapped": true,
+          "write": true,
+          "attributeMetaKey": "PERSIST_TEST_CHILD#DATETIME",
+          "value": "2011-12-03T10:15:30"
+        }
+      ]
+    }
+  ]
+}

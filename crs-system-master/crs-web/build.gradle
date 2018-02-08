@@ -1,0 +1,33 @@
+apply plugin: 'war'
+
+dependencies {
+    compileOnly(
+            project(':crs-core'),
+
+            "org.springframework:spring-web:$springVersion",
+            "org.springframework.security:spring-security-web:$springSecurityVersion",
+            "org.springframework.security:spring-security-config:$springSecurityVersion",
+            "org.springframework.security:spring-security-taglibs:$springSecurityVersion",
+
+            "org.zkoss.zk:zkplus:$zkVersion",
+            "org.zkoss.zk:zkmax:$zkVersion",
+            "org.zkoss.zk:zuti:$zkVersion",
+
+            "org.zkoss.zk:zkspring-core:$zkSpringVersion",
+            "org.zkoss.zk:zkspring-security:$zkSpringVersion",
+            "org.zkoss.zss:zssex:$zkSpreadsheetVersion",
+            "org.zkoss.zss:zsspdf:$zkSpreadsheetVersion"
+    )
+}
+
+war.dependsOn(generateRebel)
+war {
+    classpath += configurations.compileOnly.filter {
+        !it.name.contains('commons-logging') &&
+        !it.name.contains('servlet-api') &&
+        !it.name.contains('slf4j-jdk14')
+    }
+
+    exclude('**/jetty9-env.xml')
+    exclude('**/override-web.xml')
+}

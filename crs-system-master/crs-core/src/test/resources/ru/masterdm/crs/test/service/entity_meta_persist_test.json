@@ -1,0 +1,194 @@
+{
+  "key": "PERSIST_TEST",
+  "name": {
+    "descriptionRu": "тестСохраненияRu",
+    "descriptionEn": "persistTestRu"
+  },
+  "types": ["DICTIONARY"],
+  "hierarchical": true,
+  "attributes": [
+    {
+      "key": "PERSIST_TEST#STRINGML",
+      "name": {
+        "descriptionRu": "Строковый многоязычный",
+        "descriptionEn": "String multilang"
+      },
+      "type": "STRING",
+      "viewOrder": 0,
+      "multilang": true
+    },
+    {
+      "key": "PERSIST_TEST#STRINGML2",
+      "name": {
+        "descriptionRu": "Строковый многоязычный ещё",
+        "descriptionEn": "String multilang again"
+      },
+      "type": "STRING",
+      "viewOrder": 0,
+      "multilang": true
+    },
+    {
+      "key": "PERSIST_TEST#STRINGML3",
+      "name": {
+        "descriptionRu": "Строковый многоязычный ещё один",
+        "descriptionEn": "String multilang next again"
+      },
+      "type": "STRING",
+      "viewOrder": 0,
+      "multilang": true
+    },
+    {
+      "key": "PERSIST_TEST#STRING",
+      "name": {
+        "descriptionRu": "Строковый",
+        "descriptionEn": "String"
+      },
+      "type": "STRING",
+      "viewOrder": 0,
+      "multilang": false,
+      "nativeColumn": "PERSIST_TEST_STRING"
+    },
+    {
+      "key": "PERSIST_TEST#BOOLEAN",
+      "name": {
+        "descriptionRu": "Булевый",
+        "descriptionEn": "Boolean"
+      },
+      "type": "BOOLEAN",
+      "viewOrder": 0,
+      "multilang": false,
+      "nativeColumn": "PERSIST_TEST_BOOLEAN"
+    },
+    {
+      "key": "PERSIST_TEST#FILE",
+      "name": {
+        "descriptionRu": "Файл",
+        "descriptionEn": "File"
+      },
+      "type": "FILE",
+      "viewOrder": 1,
+      "multilang": true
+    },
+    {
+      "key": "PERSIST_TEST#FILE2",
+      "name": {
+        "descriptionRu": "Файл ещё",
+        "descriptionEn": "File again"
+      },
+      "type": "FILE",
+      "viewOrder": 1,
+      "multilang": true
+    },
+    {
+      "key": "PERSIST_TEST#TEXTML",
+      "name": {
+        "descriptionRu": "Текст многоязыковой",
+        "descriptionEn": "Text multilang"
+      },
+      "type": "TEXT",
+      "viewOrder": 1,
+      "multilang": true
+    },
+    {
+      "key": "PERSIST_TEST#TEXTML2",
+      "name": {
+        "descriptionRu": "Текст многоязыковой ещё",
+        "descriptionEn": "Text multilang again"
+      },
+      "type": "TEXT",
+      "viewOrder": 1,
+      "multilang": true
+    },
+    {
+      "key": "PERSIST_TEST#TEXTML3",
+      "name": {
+        "descriptionRu": "Текст многоязыковой ещё один",
+        "descriptionEn": "Text multilang next again"
+      },
+      "type": "TEXT",
+      "viewOrder": 1,
+      "multilang": true
+    },
+    {
+      "key": "PERSIST_TEST#TEXT",
+      "name": {
+        "descriptionRu": "Текст",
+        "descriptionEn": "Text"
+      },
+      "type": "TEXT",
+      "viewOrder": 1,
+      "multilang": false,
+      "nativeColumn": "PERSIST_TEST_TEXT"
+    },
+    {
+      "key": "PERSIST_TEST#NUMBER",
+      "name": {
+        "descriptionRu": "Число",
+        "descriptionEn": "Number"
+      },
+      "type": "NUMBER",
+      "viewOrder": 1,
+      "multilang": false,
+      "nativeColumn": "PERSIST_TEST_NUMBER"
+    },
+    {
+      "key": "PERSIST_TEST#DATE",
+      "name": {
+        "descriptionRu": "Дата",
+        "descriptionEn": "Date"
+      },
+      "type": "DATE",
+      "viewOrder": 1,
+      "multilang": false,
+      "nativeColumn": "DATE"
+    },
+    {
+      "key": "PERSIST_TEST#DATETIME",
+      "name": {
+        "descriptionRu": "ДатаВремя",
+        "descriptionEn": "DateTime"
+      },
+      "type": "DATETIME",
+      "viewOrder": 1,
+      "multilang": false,
+      "nativeColumn": "PERSIST_TEST_DATETIME"
+    },
+    {
+      "key": "PERSIST_TEST#REFERENCE",
+      "name": {
+        "descriptionRu": "Ссылка",
+        "descriptionEn": "Reference"
+      },
+      "type": "REFERENCE",
+      "link": true,
+      "entityKey": "PERSIST_TEST_CHILD",
+      "attributeKey": "PERSIST_TEST_CHILD#NUMBER",
+      "viewOrder": 1,
+      "multilang": false
+    },
+    {
+      "key": "PERSIST_TEST#REFERENCE2",
+      "name": {
+        "descriptionRu": "Ссылка ещё",
+        "descriptionEn": "Reference again"
+      },
+      "type": "REFERENCE",
+      "link": true,
+      "entityKey": "PERSIST_TEST_CHILD",
+      "attributeKey": "PERSIST_TEST_CHILD#STRING",
+      "viewOrder": 1,
+      "multilang": false
+    },
+    {
+      "key": "PERSIST_TEST#WHERE",
+      "name": {
+        "descriptionRu": "Где?",
+        "descriptionEn": "Where?"
+      },
+      "type": "STRING",
+      "viewOrder": 1,
+      "multilang": false,
+      "nativeColumn": "WHERE"
+    }
+  ]
+}

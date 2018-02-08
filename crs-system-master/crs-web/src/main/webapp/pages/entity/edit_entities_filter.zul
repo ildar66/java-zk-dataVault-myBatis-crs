@@ -1,0 +1,80 @@
+<zk>
+    <window apply="org.zkoss.bind.BindComposer"
+            viewModel="@id('vm') @init('ru.masterdm.crs.web.model.entity.EditEntitiesFilterViewModel')"
+            position="center,top" closable="true" width="60%" action="show: slideDown;hide: slideUp"
+            onCancel="@command('detachWindow')"
+            contentStyle="overflow:auto;">
+        <caption>
+            <button iconSclass="z-icon-plus" autodisable="self" onClick="@command('addEntitiesFilter')" sclass="button-link"
+                    label="@init(labels.add_button)"/>
+        </caption>
+        <vlayout>
+            <grid model="@load(vm.entityFilters)">
+                <columns>
+                    <column/>
+                    <column/>
+                    <column/>
+                    <column width="50px"/>
+                </columns>
+                <template name="model" var="item">
+                    <row>
+                        <combobox model="@load(vm.referencedAttributeMetaPairs)" readonly="true"
+                                  selectedItem="@bind(item.referencedAttributeMetaPair)" hflex="1"
+                                  onChange="@command('changeAttributeMeta', entityFilter=item)">
+                            <template name="model">
+                                <comboitem label="@load(vm.getReferencedAttributeMetaPairLabel(each))"
+                                           value="@load(item.referencedAttributeMetaPair)"/>
+                            </template>
+                        </combobox>
+                        <combobox model="@load(vm.getOperators(item))" readonly="true"
+                                  selectedItem="@bind(item.operator)" hflex="1"
+                                  onChange="@command('changeOperator', entityFilter=item)">
+                            <template name="model">
+                                <comboitem label="@init(labels.get(each.toString()))"/>
+                            </template>
+                        </combobox>
+                        <div>
+
+                            <checkbox checked="@bind(item.value)"
+                                      if="${item.operator ne 'IS_NULL' and item.operator ne 'IS_NOT_NULL' and item.attributeMeta.type == 'BOOLEAN'}"/>
+
+                            <textbox value="@bind(item.value) @save(item.value, before='saveEntityFilter')" constraint="no empty" hflex="1"
+                                     if="${item.operator ne 'IS_NULL' and item.operator ne 'IS_NOT_NULL' and item.attributeMeta.type == 'STRING' and vm.calcFormulaTypeKey ne item.attributeMeta.key}"/>
+
+                            <combobox model="@load(vm.formulaTypes.keySet())"
+                                      selectedItem="@load(item.value) @save(item.value, before='saveEntityFilter')"
+                                      if="${item.attributeMeta.type == 'STRING' and vm.calcFormulaTypeKey eq item.attributeMeta.key}"
+                                      constraint="no empty" hflex="1">
+                                <template name="model">
+                                    <comboitem label="@load(vm.formulaTypes[each])"/>
+                                </template>
+                            </combobox>
+
+                            <textbox value="@bind(item.value) @save(item.value, before='saveEntityFilter')" constraint="no empty" hflex="1"
+                                     if="${item.operator ne 'IS_NULL' and item.operator ne 'IS_NOT_NULL' and item.attributeMeta.type == 'TEXT'}"/>
+
+                            <decimalbox value="@bind(item.value) @save(item.value, before='saveEntityFilter')" constraint="no empty" hflex="1"
+                                        if="${item.operator ne 'IS_NULL' and item.operator ne 'IS_NOT_NULL' and item.attributeMeta.type == 'NUMBER'}"/>
+
+                            <datebox format="${labels.date_format}" hflex="1" constraint="no empty"
+                                     value="@bind(item.value) @converter('ru.masterdm.crs.web.util.converter.DateConverter') @save(item.value, before='saveEntityFilter')"
+                                     if="${item.operator ne 'IS_NULL' and item.operator ne 'IS_NOT_NULL' and item.attributeMeta.type == 'DATE'}"/>
+
+                            <datebox format="${labels.date_time_format}" hflex="1" constraint="no empty"
+                                     value="@bind(item.value) @converter('ru.masterdm.crs.web.util.converter.DateTimeConverter') @save(item.value, before='saveEntityFilter')"
+                                     if="${item.operator ne 'IS_NULL' and item.operator ne 'IS_NOT_NULL' and item.attributeMeta.type == 'DATETIME'}"></datebox>
+                        </div>
+                        <button iconSclass="z-icon-minus" sclass="button-icon" autodisable="self"
+                                onClick="@command('removeEntityFilter', entityFilter=item)"
+                                tooltiptext="@init(labels.delete_button)"/>
+                    </row>
+                </template>
+            </grid>
+            <separator height="27px" visible="@load(empty vm.entityFilters)"/>
+            <hbox width="100%" pack="end">
+                <button onClick="@command('saveEntityFilter')" label="${labels.save_button}" tooltiptext="@init(labels.save_button)"
+                        sclass="button-link"/>
+            </hbox>
+        </vlayout>
+    </window>
+</zk>

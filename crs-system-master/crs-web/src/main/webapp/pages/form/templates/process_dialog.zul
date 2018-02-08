@@ -1,0 +1,32 @@
+<window id="processDialog"
+        title="${vm.template.type.name() ne 'EXPORT' ? labels.process_dialog_window_title_import:labels.process_dialog_window_title_export}"
+        border="normal" width="600px"
+        apply="org.zkoss.bind.BindComposer"
+        viewModel="@id('vm') @init('ru.masterdm.crs.web.model.form.templates.ProcessDialogViewModel')"
+        position="center,top" closable="true" onCreate="@command(vm.fields.size()>0 or vm.template.type.name() ne 'EXPORT'? '':'close')">
+    <?component name="objectField" inline="true" macroURI="/components/form/object_field.zul"?>
+    <vlayout>
+        <grid sclass="grid-form" model="@load(vm.fields)" visible="@load(vm.fields.size()>0)">
+            <columns>
+                <column label="${labels.object_fieldname}" hflex="2"/>
+                <column label="${labels.object_value}" hflex="3"/>
+            </columns>
+            <template name="model">
+                <row if="${each.mapped ne 'true' and each.key}">
+                    <label value="${each.mappingObject.name} / ${each.attributeMeta.name.getDescription(sessionScope.userProfile.locale)}"/>
+                    <objectField/>
+                </row>
+            </template>
+        </grid>
+        <hlayout visible="@load(vm.template.type.name() ne 'EXPORT')">
+            <button sclass="button-icon" iconSclass="z-icon-paperclip" tooltiptext="${labels.process_dialog_upload}" onUpload="@command('uploadFile')"
+                    upload="true,maxsize=5120,accept=${('EXCEL' eq vm.template.format.name())?'.xls|.xlsx|.xlsm':'.xml'}, native"/>
+            <label value="@load(vm.fileName)"/>
+        </hlayout>
+        <separator/>
+        <hbox width="100%" pack="end">
+            <button label="${vm.template.type.name() eq 'EXPORT' ? labels.process_dialog_export:labels.process_dialog_import}"
+                    id="closeBtn" onClick="@command('save',cmp=processDialog)" sclass="button-link"/>
+        </hbox>
+    </vlayout>
+</window>

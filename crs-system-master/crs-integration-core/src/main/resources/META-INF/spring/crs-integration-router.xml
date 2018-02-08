@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://camel.apache.org/schema/spring"
+       xmlns:beans="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://camel.apache.org/schema/spring
+                           http://camel.apache.org/schema/spring/camel-spring.xsd">
+
+    <beans:import resource="classpath*:META-INF/spring/camel-context.xml" />
+
+    <beans:bean id="activemq" class="org.apache.activemq.camel.component.ActiveMQComponent">
+        <beans:property name="brokerURL" value="vm://localhost?broker.persistent=false"/>
+        <beans:property name="trustAllPackages" value="true"/>
+    </beans:bean>
+
+    <!-- PROPERTIES COMPONENT THAT IS REFERENCED BY DEPENDENT INTEGRATION MODULES -->
+    <beans:bean id="properties" class="org.apache.camel.component.properties.PropertiesComponent">
+        <beans:property name="locations" value="#{commandRouter.modulePropertyFileNames}"/>
+    </beans:bean>
+
+    <camelContext id="commandRouterContext">
+        <jmxAgent id="commandRouterJmxAgent" disabled="true"/>
+
+        <route id="executeRoute">
+            <from uri="direct:routeCommand"/>
+            <recipientList>
+                <simple>activemq:queue:${in.body.module}</simple>
+            </recipientList>
+        </route>
+    </camelContext>
+</beans:beans>

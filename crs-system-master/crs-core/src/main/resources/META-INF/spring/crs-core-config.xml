@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:cache="http://www.springframework.org/schema/cache"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context
+                           http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.springframework.org/schema/cache
+                           http://www.springframework.org/schema/cache/spring-cache.xsd
+                           http://www.springframework.org/schema/aop
+                           http://www.springframework.org/schema/aop/spring-aop.xsd
+                           http://www.springframework.org/schema/task
+                           http://www.springframework.org/schema/task/spring-task.xsd">
+
+    <task:annotation-driven/>
+    <cache:annotation-driven/>
+    <context:component-scan base-package="ru.masterdm.crs"/>
+
+    <aop:aspectj-autoproxy/>
+    <aop:config>
+        <aop:aspect ref="dataValidationAspect">
+            <aop:before pointcut="execution(* ru.masterdm.crs.service.*.*(.., @javax.validation.constraints.NotNull (*), ..))
+                                  and @target(org.springframework.validation.annotation.Validated)"
+                        method="processNullCheck"/>
+        </aop:aspect>
+
+        <aop:aspect ref="inputDataModificationAspect">
+            <aop:around pointcut="execution(* ru.masterdm.crs.service.*.*(.., @ru.masterdm.crs.util.annotation.CurrentTimeStamp (*), ..))"
+                        method="setCurrentTimeStamp"/>
+        </aop:aspect>
+
+        <aop:aspect ref="defaultAuditProcessingAspect">
+            <aop:around pointcut="execution(* ru.masterdm.crs.service.*.* (..))
+                                  and @annotation(ru.masterdm.crs.util.annotation.Audit)"
+                        method="log" />
+        </aop:aspect>
+    </aop:config>
+
+    <bean id="config" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+        <property name="locations">
+            <list>
+                <value>classpath:config.properties</value>
+            </list>
+        </property>
+        <property name="fileEncoding" value="UTF-8"/>
+    </bean>
+
+    <bean id="cacheManager" class="org.springframework.cache.caffeine.CaffeineCacheManager">
+        <property name="cacheSpecification" value="maximumSize=100000,expireAfterWrite=1d"/>
+    </bean>
+
+    <bean id="conversionService" class="org.springframework.context.support.ConversionServiceFactoryBean">
+        <property name="converters">
+            <set>
+                <ref bean="dateToLocalDateConverter" />
+                <ref bean="dateToLocalDateTimeConverter" />
+                <ref bean="stringToBigDecimalConverter" />
+                <ref bean="stringToBooleanConverter" />
+                <ref bean="stringToLocalDateConverter" />
+                <ref bean="stringToLocalDateTimeConverter" />
+            </set>
+        </property>
+    </bean>
+</beans>

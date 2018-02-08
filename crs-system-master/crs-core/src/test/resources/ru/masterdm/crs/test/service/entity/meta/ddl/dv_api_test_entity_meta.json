@@ -1,0 +1,97 @@
+{
+  "key": "TABLE_NAME",
+  "linkTable": "SELF_REF_TABLE_NAME",
+  "removed": false,
+  "attributes": [
+    {
+      "key": "BOOLEAN_VAL",
+      "removed": false,
+      "viewOrder": 0,
+      "type": "BOOLEAN",
+      "nullable": false,
+      "multilang": false,
+      "link": false,
+      "filterAvailable": false,
+      "nativeColumn": "BOOLEAN_VAL"
+    },
+    {
+      "key": "DATE_VAL",
+      "removed": false,
+      "viewOrder": 0,
+      "type": "DATE",
+      "nullable": false,
+      "multilang": false,
+      "link": false,
+      "filterAvailable": false,
+      "nativeColumn": "DATE_VAL"
+    },
+    {
+      "key": "DATETIME_VAL",
+      "removed": false,
+      "viewOrder": 0,
+      "type": "DATETIME",
+      "nullable": false,
+      "multilang": false,
+      "link": false,
+      "filterAvailable": false,
+      "nativeColumn": "DATETIME_VAL"
+    },
+    {
+      "key": "NUMBER_VAL",
+      "removed": false,
+      "viewOrder": 0,
+      "type": "NUMBER",
+      "nullable": false,
+      "multilang": false,
+      "link": false,
+      "filterAvailable": false,
+      "nativeColumn": "NUMBER_VAL"
+    },
+    {
+      "key": "STRING_VAL",
+      "linkTable": "LINK1",
+      "removed": false,
+      "viewOrder": 0,
+      "type": "STRING",
+      "nullable": false,
+      "multilang": true,
+      "link": false,
+      "filterAvailable": false
+    },
+    {
+      "key": "TEXT_VAL",
+      "linkTable": "LINK2",
+      "removed": false,
+      "viewOrder": 0,
+      "type": "TEXT",
+      "nullable": false,
+      "multilang": true,
+      "link": false,
+      "filterAvailable": false
+    },
+    {
+      "key": "FILE_VAL",
+      "linkTable": "LINK3",
+      "removed": false,
+      "viewOrder": 0,
+      "type": "FILE",
+      "nullable": false,
+      "multilang": false,
+      "link": false,
+      "filterAvailable": false
+    },
+    {
+      "key": "REFERENCE_VAL",
+      "linkTable": "LINK4",
+      "entityKey": "OTHER_HUB_TABLE",
+      "removed": false,
+      "viewOrder": 0,
+      "type": "REFERENCE",
+      "nullable": false,
+      "multilang": false,
+      "link": false,
+      "filterAvailable": false
+    }
+  ],
+  "hierarchical": false
+}

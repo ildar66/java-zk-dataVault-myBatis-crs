@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://camel.apache.org/schema/spring"
+             xmlns:beans="http://www.springframework.org/schema/beans"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://www.springframework.org/schema/beans
+                                 http://www.springframework.org/schema/beans/spring-beans.xsd
+                                 http://camel.apache.org/schema/spring
+                                 http://camel.apache.org/schema/spring/camel-spring.xsd">
+    <beans:bean id="objectMapper" class="ru.masterdm.crs.util.json.CrsObjectMapper"/>
+
+    <camelContext id="integrationContext">
+         <jmxAgent id="integrationJmxAgent" disabled="true"/>
+         <dataFormats>
+             <json id="moduleMetadataJsonFormat" library="Jackson"
+                   unmarshalTypeName="ru.masterdm.crs.integration.ModuleMetadata" useList="true" />
+             <json id="executionCommandJsonFormat" library="Jackson"
+                   unmarshalTypeName="ru.masterdm.crs.integration.ExecutionCommand"/>
+             <json id="executionCommandResultJsonFormat" library="Jackson"
+                   unmarshalTypeName="ru.masterdm.crs.integration.ExecutionCommandResult" objectMapper="objectMapper"/>             
+         </dataFormats>
+
+        <route id="integrationSyncRoute">
+            <from uri="direct:integrationSyncRoute"/>
+
+            <filter>
+                <simple>${in.headers.operation} == 'modules/list'</simple>
+                <to uri="http://will-use-header-url/"/>
+                <unmarshal ref="moduleMetadataJsonFormat"/>
+            </filter>
+            <filter>
+                <simple>${in.headers.operation} == 'executesync'</simple>
+                <marshal ref="executionCommandJsonFormat"/>
+                <to uri="http://will-use-header-url/"/>
+                <unmarshal ref="executionCommandResultJsonFormat"/>
+            </filter>
+        </route>
+    </camelContext>
+</beans:beans>

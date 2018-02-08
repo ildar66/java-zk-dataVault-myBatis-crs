@@ -1,0 +1,80 @@
+<zk>
+    <?component name="editEntityReferencesNoneditable" macroURI="/components/entity/edit_entity_references_noneditable.zul"?>
+    <?component name="editEntityReferencesEditable" macroURI="/components/entity/edit_entity_references_editable.zul"?>
+    <window title="@init(vm.editable ? labels.edit_entity_references_title : labels.view_entity_references_title)" apply="org.zkoss.bind.BindComposer"
+            viewModel="@id('vm') @init('ru.masterdm.crs.web.model.entity.EditEntityReferencesViewModel')"
+            position="center,center" closable="true" width="60%" height="600px"
+            action="show: slideDown;hide: slideUp" onCancel="@command('detachWindow')" contentStyle="overflow:auto;" sizable="true"
+            maximizable="true">
+        <borderlayout>
+            <center border="none">
+                <vbox hflex="1" vflex="true">
+                    <toolbar>
+                        <toolbarbutton iconSclass="z-icon-plus" onClick="@command('addEntity')"
+                                       label="@init(labels.add_button)"
+                                       disabled="@load(not vm.editable)"/>
+                    </toolbar>
+                    <grid model="@bind(vm.entityStatuses) @template(each.editingStatus ? 'editable' : 'noneditable')" vflex="1" hflex="1">
+                        <custom-attributes org.zkoss.zul.nativebar="false"/>
+                        <columns sizable="true" sclass="sizable">
+                            <column label="@init(vm.linkedEntityMeta.keyAttribute.name.getDescription(sessionScope.userProfile.locale))"/>
+
+                            <forEach items="@load(vm.attributes)" var="each" varStatus="eachStatus">
+                                <column label="@load(each.name.getDescription(sessionScope.userProfile.locale))"/>
+                            </forEach>
+
+                            <column align="center"/>
+                        </columns>
+                        <template name="noneditable" var="item">
+                            <row>
+                                <label value="@load(item.entity.key)" hflex="1" tooltiptext="@load(item.entity.key)"/>
+                                <div forEach="${vm.attributes}">
+                                    <custom-attributes each="${each}"/>
+                                    <editEntityReferencesNoneditable innerItem="@ref(item)" innerEach="@ref(each)" innerEditable="@ref(vm.editable)"/>
+                                </div>
+
+                                <div>
+                                    <button iconSclass="z-icon-pencil" autodisable="self"
+                                            onClick="@command('changeEditableStatus', entityStatus=item)"
+                                            tooltiptext="@init(labels.edit_button)" sclass="button-icon"
+                                            disabled="@load(not vm.editable)"/>
+                                    <button iconSclass="z-icon-minus" autodisable="self" onClick="@command('removeEntityStatus', entityStatus=item)"
+                                            tooltiptext="@init(labels.delete_button)" sclass="button-icon"
+                                            disabled="@load(not vm.editable)"/>
+                                </div>
+                            </row>
+                        </template>
+                        <template name="editable" var="item">
+                            <row>
+                                <textbox value="@load(item.entity.key) @validator(vm.keyValidator) @save(item.entity.key, before='confirm')"
+                                         constraint="/[0-9a-zA-Z_]{0,100}/" maxlength="30" hflex="1"
+                                         disabled="@load(not empty item.entity.id or not editableKey)"/>
+
+                                <div forEach="${vm.attributes}">
+                                    <custom-attributes each="${each}"/>
+                                    <editEntityReferencesEditable vflex="1" innerItem="@ref(item)" innerEach="@ref(each)"
+                                                                  innerEditable="@ref(vm.editable)"/>
+                                </div>
+                                <div>
+                                    <button iconSclass="z-icon-check" onClick="@command('confirm', entityStatus=item)"
+                                            tooltiptext="@init(labels.confirm_button)" sclass="button-icon" autodisable="self"/>
+                                    <button iconSclass="z-icon-times" onClick="@command('decline', entityStatus=item)"
+                                            tooltiptext="@init(labels.decline_button)" sclass="button-icon" autodisable="self"/>
+                                </div>
+                            </row>
+                        </template>
+                    </grid>
+                </vbox>
+            </center>
+            <south border="none">
+                <vlayout>
+                    <separator/>
+                    <hbox width="100%" pack="end">
+                        <button onClick="@command('detachWindow')" label="${labels.close_button}"
+                                tooltiptext="@init(labels.close_button)" sclass="button-link" autodisable="self"/>
+                    </hbox>
+                </vlayout>
+            </south>
+        </borderlayout>
+    </window>
+</zk>

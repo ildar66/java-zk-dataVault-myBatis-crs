@@ -1,0 +1,106 @@
+{
+  "key": "REMOVE_TEST_CHILD",
+  "name": {
+    "descriptionRu": "тестСохраненияДочернийRu",
+    "descriptionEn": "persistTestChildRu"
+  },
+  "types": ["DICTIONARY"],
+  "attributes": [
+    {
+      "key": "REMOVE_TEST_CHILD#STRINGML",
+      "name": {
+        "descriptionRu": "Строковый многоязычный",
+        "descriptionEn": "String multilang"
+      },
+      "type": "STRING",
+      "viewOrder": 0,
+      "multilang": true
+    },
+    {
+      "key": "REMOVE_TEST_CHILD#STRING",
+      "name": {
+        "descriptionRu": "Строковый",
+        "descriptionEn": "String"
+      },
+      "type": "STRING",
+      "viewOrder": 0,
+      "multilang": false,
+      "nativeColumn": "REMOVE_TEST_CHILD_STRING"
+    },
+    {
+      "key": "REMOVE_TEST_CHILD#BOOLEAN",
+      "name": {
+        "descriptionRu": "Булевый",
+        "descriptionEn": "Boolean"
+      },
+      "type": "BOOLEAN",
+      "viewOrder": 0,
+      "multilang": false,
+      "nativeColumn": "REMOVE_TEST_CHILD_BOOLEAN"
+    },
+    {
+      "key": "REMOVE_TEST_CHILD#FILE",
+      "name": {
+        "descriptionRu": "Файловый",
+        "descriptionEn": "File"
+      },
+      "type": "FILE",
+      "viewOrder": 1,
+      "multilang": true
+    },
+    {
+      "key": "REMOVE_TEST_CHILD#TEXTML",
+      "name": {
+        "descriptionRu": "Текст многоязыковой",
+        "descriptionEn": "Text multilang"
+      },
+      "type": "TEXT",
+      "viewOrder": 1,
+      "multilang": true
+    },
+    {
+      "key": "REMOVE_TEST_CHILD#TEXT",
+      "name": {
+        "descriptionRu": "Текст",
+        "descriptionEn": "Text"
+      },
+      "type": "TEXT",
+      "viewOrder": 1,
+      "multilang": false,
+      "nativeColumn": "REMOVE_TEST_CHILD_TEXT"
+    },
+    {
+      "key": "REMOVE_TEST_CHILD#NUMBER",
+      "name": {
+        "descriptionRu": "Число",
+        "descriptionEn": "Number"
+      },
+      "type": "NUMBER",
+      "viewOrder": 1,
+      "multilang": false,
+      "nativeColumn": "REMOVE_TEST_CHILD_NUMBER"
+    },
+    {
+      "key": "REMOVE_TEST_CHILD#DATE",
+      "name": {
+        "descriptionRu": "Дата",
+        "descriptionEn": "Date"
+      },
+      "type": "DATE",
+      "viewOrder": 1,
+      "multilang": false,
+      "nativeColumn": "REMOVE_TEST_CHILD_DATE"
+    },
+    {
+      "key": "REMOVE_TEST_CHILD#DATETIME",
+      "name": {
+        "descriptionRu": "ДатаВремя",
+        "descriptionEn": "DateTime"
+      },
+      "type": "DATETIME",
+      "viewOrder": 1,
+      "multilang": false,
+      "nativeColumn": "REMOVE_TEST_CHILD_DATETIME"
+    }
+  ]
+}

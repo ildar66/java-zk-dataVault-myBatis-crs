@@ -1,0 +1,31 @@
+{
+  "key": "REAL_ENTITY1",
+  "name": {
+    "descriptionRu": "TestEntityMetaRu",
+    "descriptionEn": "TestEntityMetaEn"
+  },
+  "types": ["DICTIONARY"],
+  "attributes": [
+    {
+      "key": "REAL_ENTITY1#ATTRIBUTE1",
+      "name": {
+        "descriptionRu": "Attribute1Ru",
+        "descriptionEn": "Attribute1En"
+      },
+      "type": "STRING",
+      "viewOrder": 0,
+      "multilang": true,
+      "nativeColumn": "ATTRIBUTE1"
+    },
+    {
+      "key": "REAL_ENTITY1#ATTRIBUTE2",
+      "name": {
+        "descriptionRu": "Attribute2Ru",
+        "descriptionEn": "Attribute2En"
+      },
+      "type": "FILE",
+      "viewOrder": 1,
+      "multilang": true
+    }
+  ]
+}

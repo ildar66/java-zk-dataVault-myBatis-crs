@@ -1,0 +1,10 @@
+<zk>
+    <window title="${labels.calculations_title}"
+            viewModel="@id('vmcalcs') @init('ru.masterdm.crs.web.model.calc.CalculationsViewModel')" contentStyle="overflow: auto" height="100%">
+
+        <?component name="calculations" macroURI="/components/calc/calculations_lists.zul"?>
+
+        <calculations vflex="1"/>
+
+    </window>
+</zk>

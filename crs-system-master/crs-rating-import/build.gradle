@@ -1,0 +1,28 @@
+buildscript {
+    dependencies {
+        classpath "org.liquibase:liquibase-gradle-plugin:$liquibasePluginVersion"
+        classpath "com.oracle:ojdbc7:$ojdbcVersion"
+        classpath "org.liquibase:liquibase-core:$liquibaseVersion"
+    }
+}
+
+dependencies {
+    compile(
+        project(':crs-integration-core')
+    )
+}
+
+apply plugin: "org.liquibase.gradle"
+
+liquibase {
+    activities {
+        main {
+            changeLogFile "${sourceSets.main.resources.srcDirs[0]}/META-INF/db/crs-rating-import-changelog.xml"
+            url "$dbUrl"
+            username "$dbUsername"
+            password "$dbPassword"
+        }
+    }
+}
+
+jar.version=ratingImportProjectVersion

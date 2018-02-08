@@ -1,0 +1,25 @@
+<window id="cloneDialog" title="${labels.clone_dialog_window_title}"
+        border="normal" width="600px"
+        apply="org.zkoss.bind.BindComposer"
+        viewModel="@id('vm') @init('ru.masterdm.crs.web.model.form.constructor.CloneDialogViewModel')"
+        position="center,top" closable="true">
+    <vlayout>
+        <grid sclass="grid-form">
+            <columns>
+                <column hflex="2"/>
+                <column hflex="3"/>
+            </columns>
+            <rows>
+                <row>
+                    <label value="${labels.clone_dialog_count}"/>
+                    <textbox value="@bind(vm.count)" hflex="1"/>
+                </row>
+            </rows>
+        </grid>
+        <separator/>
+        <hbox width="100%" pack="end">
+            <button label="${labels.clone_dialog_save}" sclass="button-link"
+                    id="closeBtn" onClick="@command('close',cmp=cloneDialog)"/>
+        </hbox>
+    </vlayout>
+</window>

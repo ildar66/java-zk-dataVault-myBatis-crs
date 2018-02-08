@@ -1,0 +1,49 @@
+<zk>
+    <?component name="calculationsListbox" macroURI="/components/calc/calculations_listbox.zul"?>
+
+    <vbox vflex="1" hflex="1">
+        <hbox sizedByContent="true">
+            <button iconSclass="z-icon-filter" autodisable="self" onClick="@command('editCalculationsFilter')"
+                    label="@init(labels.filter_button)" sclass="button-link"/>
+            <chosenbox onSelect="@command('deleteCalculationsFilter')" model="@bind(vmcalcs.entityFilters)"
+                       onClick="@command('editCalculationsFilter')"/>
+        </hbox>
+
+        <tabbox id="tb" vflex="1" hflex="1" onSelect="@command('selectTab')" sclass="global-filter" selectedIndex="@bind(vmcalcs.selectedIndex)">
+            <tabs id="tabs">
+                <tab label="@init(labels.calculations_drafts)"/>
+                <tab label="@init(labels.calculations_published)"/>
+                <tab label="@init(labels.calculations_all)"/>
+            </tabs>
+            <toolbar>
+                <toolbarbutton iconSclass="z-icon-file-o" onClick="@command('addCalculation', entity=vmcalcs.entity)"
+                               label="@init(labels.create_button)" disabled="@load(not nav.isPermitted('CALC','CREATE_NEW'))"/>
+                <toolbarbutton iconSclass="z-icon-copy" onClick="@command('copyCalculation')"
+                               label="@init(labels.copy_button)"
+                               disabled="@load((vmcalcs.selected.size() ne 1) or (not nav.isPermitted('CALC','CREATE_COPY')))"/>
+                <toolbarbutton iconSclass="z-icon-remove" onClick="@command('deleteCalculation')"
+                               label="@init(labels.delete_button)"
+                               disabled="@load((vmcalcs.selected.size() eq 0 or vmcalcs.selectedHavePublished) or (not nav.isPermitted('CALC','REMOVE')))"/>
+                <toolbarbutton iconSclass="z-icon-file-excel-o" onClick="@command('editEntitiesFilter')"
+                               label="@init(labels.export_excel_button)" disabled="@load(vmcalcs.selected.size() ne 1)" visible="false"/>
+                <toolbarbutton iconSclass="z-icon-send" onClick="@command('publishCalculation')"
+                               label="@init(labels.publish_button)"
+                               disabled="@load((vmcalcs.selected.size() eq 0 or vmcalcs.selectedHavePublished) or (not nav.isPermitted('CALC','PUBLISH')))"/>
+            </toolbar>
+            <tabpanels>
+                <tabpanel>
+                    <calculationsListbox vflex="1" model="@ref(vmcalcs.draftModel)" totalSize="@ref(vmcalcs.draftTotalSize)"
+                                         activePage="@ref(vmcalcs.draftActivePage)" showPublishedColumn="@ref(false)"/>
+                </tabpanel>
+                <tabpanel>
+                    <calculationsListbox vflex="1" model="@ref(vmcalcs.publishedModel)" totalSize="@ref(vmcalcs.publishedTotalSize)"
+                                         activePage="@ref(vmcalcs.publishedActivePage)" showPublishedColumn="@ref(false)"/>
+                </tabpanel>
+                <tabpanel>
+                    <calculationsListbox vflex="1" model="@ref(vmcalcs.model)" totalSize="@ref(vmcalcs.totalSize)"
+                                         activePage="@ref(vmcalcs.activePage)" showPublishedColumn="@ref(true)"/>
+                </tabpanel>
+            </tabpanels>
+        </tabbox>
+    </vbox>
+</zk>

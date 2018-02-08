@@ -1,0 +1,104 @@
+{
+  "key": "CLASSIFIER01R",
+  "name": {
+    "descriptionRu": "Классификатор 01 с сылкой на классификатор 2",
+    "descriptionEn": "Classifier 01 with reference to classifier 02"
+  },
+  "types": ["CLASSIFIER"],
+  "attributes": [
+    {
+      "key": "CLASSIFIER01R#CLASSIFIER_TYPE",
+      "name": {
+        "descriptionRu": "Тип классификатора",
+        "descriptionEn": "Classifier type"
+      },
+      "type": "NUMBER",
+      "viewOrder": 0,
+      "multilang": false,
+      "nativeColumn": "CLASSIFIER_TYPE"
+    },
+    {
+      "key": "CLASSIFIER01R#CLASSIFIER_COMMENT",
+      "name": {
+        "descriptionRu": "Комментарий классификатора",
+        "descriptionEn": "Classifier comment"
+      },
+      "type": "TEXT",
+      "viewOrder": 0,
+      "multilang": false,
+      "nativeColumn": "CLASSIFIER_COMMENT"
+    },
+    {
+      "key": "CLASSIFIER01R#STRING",
+      "name": {
+        "descriptionRu": "Строковый",
+        "descriptionEn": "String"
+      },
+      "type": "STRING",
+      "viewOrder": 0,
+      "multilang": false,
+      "nativeColumn": "IS_STRING"
+    },
+    {
+      "key": "CLASSIFIER01R#NUMBER",
+      "name": {
+        "descriptionRu": "Число",
+        "descriptionEn": "Number"
+      },
+      "type": "NUMBER",
+      "viewOrder": 1,
+      "multilang": false,
+      "nativeColumn": "IS_NUMBER"
+    },
+    {
+      "key": "CLASSIFIER01R#DATETIME",
+      "name": {
+        "descriptionRu": "ДатаВремя",
+        "descriptionEn": "dateTime"
+      },
+      "type": "DATETIME",
+      "viewOrder": 1,
+      "multilang": false,
+      "nativeColumn": "IS_DATETIME"
+    },
+    {
+      "key": "CLASSIFIER01R#CALC",
+      "name": {
+        "descriptionRu": "Ссылка на рассчёт",
+        "descriptionEn": "Reference to calculation"
+      },
+      "type": "REFERENCE",
+      "link": true,
+      "entityKey": "CALC",
+      "attributeKey": "CALC#NAME",
+      "viewOrder": 1,
+      "multilang": false
+    },
+    {
+      "key": "CLASSIFIER01R#CLASS02",
+      "name": {
+        "descriptionRu": "Ссылка на классификатор 02",
+        "descriptionEn": "Reference to classifier 02"
+      },
+      "type": "REFERENCE",
+      "link": true,
+      "entityKey": "CLASSIFIER02",
+      "attributeKey": "CLASSIFIER02#STRING",
+      "viewOrder": 1,
+      "multilang": false
+    },
+    {
+      "key": "CLASSIFIER01R#CALC_PROFILE",
+      "name": {
+        "descriptionRu": "Ссылка на профиль",
+        "descriptionEn": "Reference to profile"
+      },
+      "type": "REFERENCE",
+      "link": true,
+      "entityKey": "CALC_PROFILE",
+      "attributeKey": "CALC_PROFILE#NAME",
+      "viewOrder": 1,
+      "multilang": false
+    }
+  ]
+}

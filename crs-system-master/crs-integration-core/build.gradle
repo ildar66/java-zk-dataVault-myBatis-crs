@@ -1,0 +1,15 @@
+dependencies {
+    compile(
+            project(':crs-core'),
+
+            "org.apache.camel:camel-spring:$camelVersion",
+            "org.apache.camel:camel-core:$camelVersion",
+            "org.apache.camel:camel-quartz2:$camelVersion",
+            "org.apache.camel:camel-jms:$camelVersion",
+
+            "org.apache.activemq:activemq-camel:$activeMqCamelVersion",
+
+            "org.springframework:spring-jms:$springVersion",
+            "org.springframework:spring-messaging:$springVersion"
+    )
+}

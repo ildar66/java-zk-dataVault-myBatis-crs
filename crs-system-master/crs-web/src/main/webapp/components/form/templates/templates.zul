@@ -1,0 +1,43 @@
+<zk>
+    <vbox vflex="1" hflex="1">
+
+        <toolbar>
+            <toolbarbutton label="${labels.templates_menu_new}" iconSclass="z-icon-file-o"
+                           onClick="@command('newFormTemplate')" disabled="@load(not nav.isPermitted('FORM_TEMPLATE','CREATE_NEW'))"/>
+            <toolbarbutton label="${labels.templates_menu_copy}" iconSclass="z-icon-copy"
+                           onClick="@command('copyFormTemplate')"
+                           disabled="@load(vm.selected.size() eq 0 or not nav.isPermitted('FORM_TEMPLATE','CREATE_NEW'))"/>
+            <toolbarbutton label="${labels.templates_menu_import}" iconSclass="z-icon-download"
+                           upload="true,maxsize=20960" onUpload="@command('loadFormTemplate')"
+                           disabled="@load(not nav.isPermitted('FORM_TEMPLATE','CREATE_NEW'))"/>
+            <toolbarbutton label="${labels.templates_menu_export}" iconSclass="z-icon-upload"
+                           onClick="@command('saveFormTemplate')" disabled="@load(vm.selected.size() eq 0)"/>
+            <toolbarbutton label="${labels.templates_menu_delete}" iconSclass="z-icon-remove"
+                           onClick="@command('deleteFormTemplate')"
+                           disabled="@load((vm.selected.size() eq 0) or (not nav.isPermitted('FORM_TEMPLATE','REMOVE')))"/>
+        </toolbar>
+        <listbox vflex="1" model="@load(vm.formTemplates)" multiple="true" checkmark="true"
+                 selectedItems="@bind(vm.selected)" sclass="entities-list">
+            <custom-attributes org.zkoss.zul.nativebar="false"/>
+            <listhead sizable="true" sclass="sizable">
+                <listheader width="30px"/>
+                <listheader label="${labels.templates_column_name}" width="30%"/>
+                <listheader label="${labels.templates_column_forms}" width="50%"/>
+                <listheader label="${labels.templates_column_format}" width="10%"/>
+                <listheader label="${labels.templates_column_draft}"/>
+            </listhead>
+
+            <template name="model" var="item">
+                <listitem onClick="@command('editFormTemplate', template=item)">
+                    <listcell onClick="@command('')"
+                              iconSclass="@load(vm.selected.contains(item) ? 'z-icon-check-square-o' : 'z-icon-square-o')"
+                              sclass="@load(vm.selected.contains(item) ? 'entity-checked' : 'entity-unchecked')"/>
+                    <listcell label="@load(item.name.getDescription(sessionScope.userProfile.locale))"/>
+                    <listcell label="@load(vm.getForms(item))"/>
+                    <listcell label="@load(item.format.name())"/>
+                    <listcell iconSclass="@load(item.draft ? 'z-icon-check' : '')"/>
+                </listitem>
+            </template>
+        </listbox>
+    </vbox>
+</zk>

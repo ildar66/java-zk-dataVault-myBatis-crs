@@ -1,0 +1,32 @@
+<zk>
+    <window title="@init(vm.edit ? labels.edit_entity_text_title : labels.view_entity_text_title)"
+            apply="org.zkoss.bind.BindComposer"
+            viewModel="@id('vm') @init('ru.masterdm.crs.web.model.entity.EditEntityTextViewModel')"
+            position="center,center" closable="true" width="40%" height="400px"
+            action="show: slideDown;hide: slideUp" onCancel="@command('detachWindow')" contentStyle="overflow:auto;" sizable="true"
+            maximizable="true">
+        <borderlayout>
+            <center border="none">
+                <textbox style="resize:none;" hflex="1" vflex="1" value="@bind(vm.value)"
+                         rows="20" if="${not vm.entityStatus.entity.getAttribute(vm.attributeMetaKey).meta.multilang}"
+                         readonly="${not vm.edit}"/>
+
+                <textbox style="resize:none;" hflex="1" vflex="1"
+                         value="@load(vm.value) @save(vm.value)"
+                         rows="20"
+                         if="${vm.entityStatus.entity.getAttribute(vm.attributeMetaKey).meta.multilang}"
+                         readonly="${not vm.edit}"/>
+            </center>
+            <south border="none">
+                <vlayout>
+                    <separator/>
+                    <hbox width="100%" pack="end">
+                        <button onClick="@command('saveEntityText')" label="${labels.save_button}" visible="${vm.edit}" sclass="button-link"
+                                disabled="@load(not vm.edit or not vm.entityEditAllowed)"/>
+                        <button onClick="@command('detachWindow')" label="${labels.close_button}" sclass="button-link"/>
+                    </hbox>
+                </vlayout>
+            </south>
+        </borderlayout>
+    </window>
+</zk>

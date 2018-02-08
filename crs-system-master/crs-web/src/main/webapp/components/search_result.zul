@@ -1,0 +1,201 @@
+<borderlayout vflex="1">
+    <center sclass="no-borders" margins="12,16,0,0" vflex="1" autoscroll="true">
+        <custom-attributes org.zkoss.zul.nativebar="false"/>
+        <vbox hflex="1" vflex="1" spacing="0">
+            <hbox sclass="page-result-field-search" hflex="1" spacing="0">
+                <textbox value="@load(srvm.searchString) @save(srvm.searchString) @save(nav.searchString)" hflex="1" onOK="@command('search')"/>
+                <button iconSclass="z-icon-search" autodisable="self" onClick="@command('search')" tooltiptext="@init(labels.search_button)"/>
+            </hbox>
+            <label value="@load(srvm.foundTitle)"/>
+            <separator sclass="no-borders transparent-background"/>
+            <hbox pack="center" sclass="search-result" hflex="1"
+                  visible="@load(not empty srvm.clientGroups and (empty srvm.searchCategory or srvm.searchCategory eq 'groups'))">
+                <grid hflex="1" model="@load(srvm.clientGroups)">
+                    <auxhead>
+                        <auxheader colspan="2" label="@load(srvm.clientGroupsTitle)"/>
+                    </auxhead>
+                    <columns>
+                        <column hflex="2"/>
+                        <column hflex="1"/>
+                    </columns>
+                    <template name="model">
+                        <row>
+                            <vbox spacing="0">
+                                <hbox>
+                                    <a onClick="@command('navigateClientGroup', clientGroup=each.entity)"
+                                       label="@init(each.entity.attributes[nav.getClientGroupAttributeMeta('NAME').key].getValue(sessionScope.userProfile.locale))"
+                                       autodisable="self" sclass="common_link result-client"/>
+                                    <span>
+                                        <a onClick="@command('removeFavorite',entityStatus=each)" visible="@load(srvm.isFavorite(each.entity))"
+                                           sclass="favorites-in" tooltiptext="@init(labels.favorites_remove)">
+                                            <label zclass="z-icon-star"/>
+                                        </a>
+                                        <a onClick="@command('addFavorite',entityStatus=each)"
+                                           visible="@load(not srvm.isFavorite(each.entity))"
+                                           sclass="favorites-out" tooltiptext="@init(labels.favorites_add)">
+                                            <label zclass="z-icon-star-o"/>
+                                        </a>
+                                    </span>
+                                </hbox>
+                                <hbox spacing="20px">
+                                    <label sclass="label-header" value="@init(labels.search_result_last_rating.concat(': '))"/>
+                                    <label sclass="label-header" value="@init(labels.search_result_last_rating_date.concat(': '))"/>
+                                </hbox>
+                                <hbox>
+                                    <label sclass="label-header" value="@init(labels.search_result_calc_model.concat(': '))"/>
+                                </hbox>
+                                <separator spacing="2px"/>
+                                <button label="@init(labels.client_group_calculations)"
+                                        onClick="@command('navigateClientGroup', clientGroup=each.entity, mode=true)"
+                                        sclass="button-calculations"/>
+                                <separator spacing="6px"/>
+                            </vbox>
+                            <hbox>
+                                <vbox width="90px">
+                                    <label sclass="label-header"
+                                           value="@init(labels.client_group_code.concat(':'))"/>
+                                </vbox>
+                                <vbox width="110px">
+                                    <hbox width="100%" pack="end">
+                                        <label sclass="label-value" value="@init(each.entity.key)"/>
+                                    </hbox>
+                                </vbox>
+                            </hbox>
+                        </row>
+                    </template>
+                </grid>
+            </hbox>
+            <paging pageSize="@load(srvm.pageSize)" totalSize="@load(srvm.clientGroupTotalSize)"
+                    activePage="@save(srvm.clientGroupActivePage)"
+                    visible="@load(not empty srvm.clientGroups and (empty srvm.searchCategory or srvm.searchCategory eq 'groups') and srvm.clientGroupTotalSize > srvm.pageSize)"/>
+            <separator height="20px"/>
+            <hbox pack="center" sclass="search-result" hflex="1"
+                  visible="@load(not empty srvm.clients and (empty srvm.searchCategory or srvm.searchCategory eq 'clients'))">
+                <grid hflex="1" model="@load(srvm.clients)">
+                    <auxhead>
+                        <auxheader colspan="2" label="@load(srvm.clientsTitle)"/>
+                    </auxhead>
+                    <columns>
+                        <column hflex="2"/>
+                        <column hflex="1"/>
+                    </columns>
+                    <template name="model">
+                        <row>
+                            <vbox spacing="0">
+                                <hbox>
+                                    <a onClick="@command('navigateClient', client=each.entity)"
+                                       label="@init(each.entity.attributes[nav.getClientAttributeMeta('NAME').key].getValue(sessionScope.userProfile.locale))"
+                                       autodisable="self" sclass="common_link result-client"/>
+                                    <span>
+                                        <a onClick="@command('removeFavorite',entityStatus=each)" visible="@load(srvm.isFavorite(each.entity))"
+                                           sclass="favorites-in" tooltiptext="@init(labels.favorites_remove)">
+                                            <label zclass="z-icon-star"/>
+                                        </a>
+                                        <a onClick="@command('addFavorite',entityStatus=each)" visible="@load(not srvm.isFavorite(each.entity))"
+                                           sclass="favorites-out" tooltiptext="@init(labels.favorites_add)">
+                                            <label zclass="z-icon-star-o"/>
+                                        </a>
+                                    </span>
+                                </hbox>
+                                <hbox spacing="20px">
+                                    <label sclass="label-header" value="@init(labels.search_result_last_rating.concat(': '))"/>
+                                    <label sclass="label-header" value="@init(labels.search_result_last_rating_date.concat(': '))"/>
+                                </hbox>
+                                <hbox>
+                                    <label sclass="label-header" value="@init(labels.search_result_calc_model.concat(': '))"/>
+                                </hbox>
+                                <separator spacing="2px"/>
+                                <button label="@init(labels.client_calculations)" onClick="@command('navigateClient', client=each.entity, mode=true)"
+                                        sclass="button-calculations"/>
+                                <separator spacing="6px"/>
+                            </vbox>
+                            <hbox>
+                                <vbox width="90px">
+                                    <label sclass="label-header" value="@init(labels.client_slx.concat(':'))"/>
+                                    <label sclass="label-header" value="@init(nav.getClientAttributeLabel('CLIENT_INN').concat(':'))"/>
+                                    <label sclass="label-header" value="@init(nav.getClientAttributeLabel('OGRN').concat(':'))"/>
+                                </vbox>
+                                <vbox width="110px">
+                                    <hbox width="100%" pack="end">
+                                        <label sclass="label-value" value="@init(each.entity.key)"/>
+                                    </hbox>
+                                    <hbox width="100%" pack="end">
+                                        <forEach items="@init(each.entity.attributes[nav.getClientAttributeMeta('CLIENT_INN').key].value)" var="item"
+                                                 varStatus="itemStatus">
+                                            <label sclass="label-value"
+                                                   value="@init(item.entity.getAttributeValue(nav.getClientInnAttributeKey('TAX_ID')))"/>
+                                        </forEach>
+                                    </hbox>
+                                    <hbox width="100%" pack="end">
+                                        <forEach items="@init(each.entity.attributes[nav.getClientAttributeMeta('OGRN').key].value)" var="item"
+                                                 varStatus="itemStatus">
+                                            <label sclass="label-value"
+                                                   value="@init(item.entity.getAttributeValue(nav.getClientOgrnAttributeKey('REG_NUM')))"/>
+                                        </forEach>
+                                    </hbox>
+                                </vbox>
+                            </hbox>
+                        </row>
+                    </template>
+                </grid>
+            </hbox>
+            <paging pageSize="@load(srvm.pageSize)" totalSize="@load(srvm.clientTotalSize)"
+                    activePage="@save(srvm.clientActivePage)"
+                    visible="@load(not empty srvm.clients and (empty srvm.searchCategory or srvm.searchCategory eq 'clients') and srvm.clientTotalSize > srvm.pageSize)"/>
+            <separator height="20px"/>
+            <hbox pack="center" sclass="search-result" hflex="1"
+                  visible="@load(not empty srvm.users and (empty srvm.searchCategory or srvm.searchCategory eq 'users'))">
+                <grid hflex="1" model="@load(srvm.users)">
+                    <auxhead>
+                        <auxheader colspan="2" label="@load(srvm.usersTitle)"/>
+                    </auxhead>
+                    <columns>
+                        <column hflex="2"/>
+                        <column hflex="1"/>
+                    </columns>
+                    <template name="model">
+                        <row>
+                            <vbox spacing="0">
+                                <hbox>
+                                    <label value="@init(each.entity.fullName)" sclass="common_link result-client"/>
+                                    <span>
+                                        <a onClick="@command('removeFavorite',entityStatus=each)" visible="@load(srvm.isFavorite(each.entity))"
+                                           sclass="favorites-in" tooltiptext="@init(labels.favorites_remove)">
+                                            <label zclass="z-icon-star"/>
+                                        </a>
+                                        <a onClick="@command('addFavorite',entityStatus=each)" visible="@load(not srvm.isFavorite(each.entity))"
+                                           sclass="favorites-out" tooltiptext="@init(labels.favorites_add)">
+                                            <label zclass="z-icon-star-o"/>
+                                        </a>
+                                    </span>
+                                </hbox>
+                                <hbox>
+                                    <label sclass="label-header" value="@init(labels.search_result_role.concat(':'))"/>
+                                    <label sclass="label-header" value="@load(srvm.getRolesName(each.entity.roles))"/>
+                                </hbox>
+                                <hbox>
+                                    <label sclass="label-header" value="@init(labels.search_result_department.concat(':'))"/>
+                                    <label sclass="label-header" value="@load(each.entity.department.fullName.getDescription(sessionScope.userProfile.locale))"/>
+                                </hbox>
+                                <separator spacing="2px"/>
+                                <button label="@init(labels.client_calculations)" onClick="@command('navigateUser', user=each.entity)"
+                                        sclass="button-calculations"/>
+                                <separator spacing="6px"/>
+                            </vbox>
+                        </row>
+                    </template>
+                </grid>
+            </hbox>
+            <paging pageSize="@load(srvm.pageSize)" totalSize="@load(srvm.userTotalSize)" activePage="@save(srvm.userActivePage)"
+                    visible="@load(not empty srvm.users and (empty srvm.searchCategory or srvm.searchCategory eq 'users') and srvm.userTotalSize > srvm.pageSize)"/>
+        </vbox>
+    </center>
+    <east sclass="no-borders" margins="64,32,0,0" width="200px">
+        <vbox>
+            <button label="@load(srvm.allTitle)" sclass="button-link" onClick="@command('setSearchCategory',category='')"/>
+            <button label="@load(srvm.clientGroupsTitle)" sclass="button-link" onClick="@command('setSearchCategory',category='groups')"/>
+            <button label="@load(srvm.clientsTitle)" sclass="button-link" onClick="@command('setSearchCategory',category='clients')"/>
+            <button label="@load(srvm.usersTitle)" sclass="button-link" onClick="@command('setSearchCategory',category='users')"/>
+        </vbox>
+    </east>
+</borderlayout>

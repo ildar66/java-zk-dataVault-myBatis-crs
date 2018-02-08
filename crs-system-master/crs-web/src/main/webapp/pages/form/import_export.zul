@@ -1,0 +1,58 @@
+<zk>
+    <window border="none" height="100%"
+            apply="org.zkoss.bind.BindComposer"
+            viewModel="@id('vm') @init('ru.masterdm.crs.web.model.form.ImportExportViewModel')"
+            contentStyle="overflow:auto">
+        <caption>
+            <label value="@init(labels.import_export_title)"/>
+        </caption>
+        <tabbox vflex="1" hflex="1" sclass="global-filter">
+            <tabs>
+                <tab label="@init(labels.import_export_import)"/>
+                <tab label="@init(labels.import_export_export)"/>
+                <tab label="@init(labels.import_export_log)" disabled="true"/>
+            </tabs>
+            <tabpanels>
+                <tabpanel>
+                    <grid vflex="1" model="@load(vm.getFormTemplates('IMPORT'))">
+                        <custom-attributes org.zkoss.zul.nativebar="false"/>
+                        <columns>
+                            <column label="${labels.templates_column_name}" width="30%"/>
+                            <column label="${labels.templates_column_forms}" width="50%"/>
+                            <column label="${labels.templates_column_format}" width="10%"/>
+                        </columns>
+
+                        <template name="model" var="item">
+                            <row onClick="@command('processCommand', template=item, command='importFile')"
+                                 tooltiptext="@init(labels.import_export_process_import)" style="cursor: pointer">
+                                <label value="@load(item.name.getDescription(sessionScope.userProfile.locale))"/>
+                                <label value="@load(vm.getForms(item))"/>
+                                <label value="@load(item.format.name())"/>
+                            </row>
+                        </template>
+                    </grid>
+                </tabpanel>
+                <tabpanel>
+                    <grid vflex="1" model="@load(vm.getFormTemplates('EXPORT'))">
+                        <custom-attributes org.zkoss.zul.nativebar="false"/>
+                        <columns>
+                            <column label="${labels.templates_column_name}" width="30%"/>
+                            <column label="${labels.templates_column_forms}" width="50%"/>
+                            <column label="${labels.templates_column_format}" width="10%"/>
+                        </columns>
+
+                        <template name="model" var="item">
+                            <row onClick="@command('processCommand', template=item, command='exportFile')"
+                                 tooltiptext="@init(labels.import_export_process_export)" style="cursor: pointer">
+                                <label value="@load(item.name.getDescription(sessionScope.userProfile.locale))"/>
+                                <label value="@load(vm.getForms(item))"/>
+                                <label value="@load(item.format.name())"/>
+                            </row>
+                        </template>
+                    </grid>
+                </tabpanel>
+                <tabpanel/>
+            </tabpanels>
+        </tabbox>
+    </window>
+</zk>

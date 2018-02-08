@@ -1,0 +1,50 @@
+<zk>
+    <window height="100%"
+            contentStyle="overflow:auto"
+            viewModel="@id('vm') @init('ru.masterdm.crs.web.model.calc.formula.FormulaListViewModel')">
+
+        <caption>
+            <label value="${labels.layout_calculations_title}"/>
+            <label zclass="z-icon-angle-right"/>
+            <label value="${labels.formula_list_title}"/>
+        </caption>
+        <vbox vflex="1" hflex="1">
+            <hbox sizedByContent="true">
+                <button iconSclass="z-icon-filter" autodisable="self" onClick="@command('editCalculationsFilter')"
+                        label="@init(labels.filter_button)" sclass="button-link"/>
+                <chosenbox onClick="@command('editCalculationsFilter')" onSelect="@command('deleteCalculationsFilter')"
+                           model="@bind(vm.entityFilters)"/>
+            </hbox>
+            <toolbar>
+                <toolbarbutton label="${labels.create_button}" iconSclass="z-icon-file-o" onClick="@command('addFormula')"
+                               disabled="@load(not nav.isPermitted('CALC_FORMULA','CREATE_NEW'))"/>
+                <toolbarbutton label="${labels.delete_button}" iconSclass="z-icon-remove"
+                               disabled="@load(vm.selected.size() eq 0 or not nav.isPermitted('CALC_FORMULA','REMOVE'))"
+                               onClick="@command('removeFormula')"/>
+                <toolbarbutton label="${labels.import_excel_button}" iconSclass="z-icon-arrow-down" disabled="true"
+                               tooltiptext="@init(labels.formula_in_development)"/>
+                <toolbarbutton label="${labels.export_excel_button}" iconSclass="z-icon-arrow-up" disabled="true"
+                               tooltiptext="@init(labels.formula_in_development)"/>
+            </toolbar>
+            <tree vflex="1" hflex="1" id="tree" model="@bind(vm.treeModel)" selectedItems="@bind(vm.selected)" multiple="true"
+                  checkmark="true">
+                <custom-attributes org.zkoss.zul.nativebar="false"/>
+                <treecols sizable="true" sclass="sizable">
+                    <treecol label="${vm.entityMeta.keyAttribute.name.getDescription(sessionScope.userProfile.locale)}" width="25%"/>
+                    <treecol label="${labels.name}" sortAscending="${cFristNameAsc}" sortDescending="${cFristNameDsc}"/>
+                    <treecol label="${labels.formula_type}" width="15%"/>
+                </treecols>
+                <template name="model" var="fm">
+                    <treeitem>
+                        <treerow>
+                            <treecell label="@bind(fm.key)" onClick="@command('editFormula', formula=fm)"/>
+                            <treecell label="@bind(fm.name.getDescription(sessionScope.userProfile.locale))"
+                                      onClick="@command('editFormula', formula=fm)"/>
+                            <treecell label="@load(labels[fm.type.name()])" onClick="@command('editFormula', formula=fm)"/>
+                        </treerow>
+                    </treeitem>
+                </template>
+            </tree>
+        </vbox>
+    </window>
+</zk>

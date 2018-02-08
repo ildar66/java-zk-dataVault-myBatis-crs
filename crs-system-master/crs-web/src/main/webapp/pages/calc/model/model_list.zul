@@ -1,0 +1,52 @@
+<zk>
+    <window apply="org.zkoss.bind.BindComposer"
+            viewModel="@id('vm') @init('ru.masterdm.crs.web.model.calc.model.ModelListViewModel')"
+            contentStyle="overflow:auto;" height="100%">
+
+        <?component name="modelsListbox" macroURI="/components/calc/model/model_list_listbox.zul"?>
+
+        <caption>
+            <label value="${labels.layout_calculations_title}"/>
+            <label zclass="z-icon-angle-right"/>
+            <label value="${labels.model_list_title}"/>
+        </caption>
+
+        <vbox vflex="1" hflex="1">
+            <hbox sizedByContent="true">
+                <button iconSclass="z-icon-filter" autodisable="self" onClick="@command('editModelsFilter')"
+                        label="@init(labels.filter_button)" sclass="button-link"/>
+                <chosenbox onSelect="@command('deleteModelsFilter')" model="@bind(vm.entityFilters)"
+                           onClick="@command('editModelsFilter')"/>
+            </hbox>
+            <tabbox id="tb" vflex="1" hflex="1" sclass="global-filter">
+                <tabs id="tabs">
+                    <tab label="${labels.model_list_drafts}" onClick="@command('selectTab', draftTabSelect=true)"/>
+                    <tab label="${labels.model_list_published}" onClick="@command('selectTab', draftTabSelect=false)"/>
+                </tabs>
+                <toolbar>
+
+                    <toolbarbutton iconSclass="z-icon-file-o" label="@init(labels.create_button)"
+                                   onClick="@command('addModel')" disabled="@load(not nav.isPermitted('CALC_MODEL','CREATE_NEW'))"/>
+                    <toolbarbutton iconSclass="z-icon-remove" onClick="@command('deleteModel')"
+                                   label="@init(labels.delete_button)"
+                                   disabled="@load(vm.selected.size() eq 0 or vm.selectedHavePublished or not nav.isPermitted('CALC_MODEL','REMOVE'))"/>
+                    <toolbarbutton iconSclass="z-icon-send" onClick="@command('publishModel')"
+                                   label="@init(labels.publish_button)"
+                                   disabled="@load(vm.selected.size() eq 0 or vm.selectedHavePublished or not nav.isPermitted('CALC_MODEL','PUBLISH'))"/>
+                </toolbar>
+                <tabpanels>
+                    <tabpanel>
+                        <modelsListbox vflex="1" model="@ref(vm.draftModel)" totalSize="@ref(vm.draftTotalSize)"
+                                       activePage="@ref(vm.draftActivePage)"/>
+                    </tabpanel>
+                    <tabpanel>
+                        <modelsListbox vflex="1" model="@ref(vm.publishedModel)" totalSize="@ref(vm.publishedTotalSize)"
+                                       activePage="@ref(vm.publishedActivePage)"/>
+                    </tabpanel>
+                </tabpanels>
+            </tabbox>
+
+        </vbox>
+
+    </window>
+</zk>

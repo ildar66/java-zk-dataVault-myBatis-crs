@@ -1,0 +1,7 @@
+<zk>
+    <textbox id="ww_code" multiline="true"
+             apply="org.zkoss.bind.BindComposer"
+             viewModel="@id('vm') @init('ru.masterdm.crs.web.model.calc.formula.WysiwygModel')"
+             value="@load(value) @save(value, after='update')"
+             onUpdate="@command('update',event=event)"/>
+</zk>

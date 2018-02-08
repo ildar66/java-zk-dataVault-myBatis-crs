@@ -1,0 +1,28 @@
+<zk>
+    <grid sclass="grid-form">
+        <columns>
+            <column hflex="1"/>
+            <column hflex="4"/>
+        </columns>
+        <rows>
+            <row>
+                <label value="@init(labels.key.concat(':'))"/>
+                <textbox value="@bind(vm.entityMetaGroup.key) @save(vm.entityMetaGroup.key, before='persistEntityMetaGroup')"
+                         constraint="@load(vm.entityKeyConstraint)" maxlength="100" hflex="1" disabled="@load(not vm.add)"
+                         tooltiptext="@load(vm.entityMetaGroup.key)"/>
+            </row>
+            <row>
+                ${labels.name_ru}:
+                <textbox
+                        value="@bind(vm.entityMetaGroup.name.descriptionRu) @save(vm.entityMetaGroup.name.descriptionRu, before='persistEntityMetaGroup')"
+                        constraint="no empty" maxlength="@load(nav.stringMaxLength)" hflex="1"/>
+            </row>
+            <row>
+                ${labels.name_en}:
+                <textbox
+                        value="@bind(vm.entityMetaGroup.name.descriptionEn) @save(vm.entityMetaGroup.name.descriptionEn, before='persistEntityMetaGroup')"
+                        constraint="no empty" maxlength="@load(nav.stringMaxLength)" hflex="1"/>
+            </row>
+        </rows>
+    </grid>
+</zk>

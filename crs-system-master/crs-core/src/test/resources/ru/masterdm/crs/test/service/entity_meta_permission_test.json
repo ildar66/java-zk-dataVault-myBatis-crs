@@ -1,0 +1,77 @@
+{
+  "key": "PERMISSION_TEST",
+  "name": {
+    "descriptionRu": "тестПравдоступаRu",
+    "descriptionEn": "permissionTestRu"
+  },
+  "types": ["DICTIONARY"],
+  "hierarchical": true,
+  "attributes": [
+    {
+      "key": "PERMISSION_TEST#STRING",
+      "name": {
+        "descriptionRu": "Строковый",
+        "descriptionEn": "String"
+      },
+      "type": "STRING",
+      "viewOrder": 0,
+      "multilang": false,
+      "nativeColumn": "PERMISSION_TEST_STRING"
+    },
+    {
+      "key": "PERMISSION_TEST#BOOLEAN",
+      "name": {
+        "descriptionRu": "Булевый",
+        "descriptionEn": "Boolean"
+      },
+      "type": "BOOLEAN",
+      "viewOrder": 0,
+      "multilang": false,
+      "nativeColumn": "PERMISSION_TEST_BOOLEAN"
+    },
+    {
+      "key": "PERMISSION_TEST#TEXT",
+      "name": {
+        "descriptionRu": "Текст",
+        "descriptionEn": "Text"
+      },
+      "type": "TEXT",
+      "viewOrder": 1,
+      "multilang": false,
+      "nativeColumn": "PERMISSION_TEST_TEXT"
+    },
+    {
+      "key": "PERMISSION_TEST#NUMBER",
+      "name": {
+        "descriptionRu": "Число",
+        "descriptionEn": "Number"
+      },
+      "type": "NUMBER",
+      "viewOrder": 1,
+      "multilang": false,
+      "nativeColumn": "PERMISSION_TEST_NUMBER"
+    },
+    {
+      "key": "PERMISSION_TEST#DATE",
+      "name": {
+        "descriptionRu": "Дата",
+        "descriptionEn": "Date"
+      },
+      "type": "DATE",
+      "viewOrder": 1,
+      "multilang": false,
+      "nativeColumn": "DATE"
+    },
+    {
+      "key": "PERMISSION_TEST#DATETIME",
+      "name": {
+        "descriptionRu": "ДатаВремя",
+        "descriptionEn": "DateTime"
+      },
+      "type": "DATETIME",
+      "viewOrder": 1,
+      "multilang": false,
+      "nativeColumn": "PERMISSION_TEST_DATETIME"
+    }
+  ]
+}

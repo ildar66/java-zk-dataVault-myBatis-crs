@@ -1,0 +1,205 @@
+<zk>
+    <?component name="editEntitiesEditable" macroURI="/components/entity/edit_entities_editable.zul"?>
+    <?component name="editEntitiesNoneditable" macroURI="/components/entity/edit_entities_noneditable.zul"?>
+    <vbox vflex="1" hflex="1">
+        <hbox sizedByContent="true" visible="@load(vmcalc.entityMeta ne null)">
+            <if test="@init(not simpleFilter)">
+                <button iconSclass="z-icon-filter" autodisable="self" onClick="@command('editEntitiesFilter')"
+                        label="@init(labels.filter_button)" sclass="button-link"/>
+                <chosenbox onSelect="@command('deleteEntitiesFilter')" model="@bind(vmcalc.entityFilters)"
+                           onClick="@command('editEntitiesFilter')"/>
+            </if>
+            <if test="@init(simpleFilter)">
+                <hbox hflex="1">
+                    <span sclass="z-icon-filter"/>
+                    <textbox instant="true" width="200px" value="@bind(vmcalc.entityFilter)" onChange="@global-command('resetEntitiesFilter')"/>
+                </hbox>
+            </if>
+        </hbox>
+        <toolbar>
+            <toolbarbutton iconSclass="z-icon-plus" onClick="@command('addEntity')"
+                           label="@init(labels.add_button)"
+                           disabled="@load(sessionScope.dataSlice.getDataSliceDateSet(vmcalc.entityMeta.key) or not editable or (not nav.isPermittedForEntityType('DICTIONARY','EDIT')))"/>
+            <toolbarbutton iconSclass="z-icon-calendar" onClick="@command('editDataSliceDate')"
+                           label="@init(labels.set_data_slice_date_button)" visible="@init(showDataSlice)"/>
+            <toolbarbutton iconSclass="z-icon-upload" onClick="@command('exportEntities')" label="@init(labels.export_button)"
+                           visible="@init(showExportImport)"/>
+            <toolbarbutton iconSclass="z-icon-download" onClick="@command('importCommand', command='importFile')" visible="@init(showExportImport)"
+                           label="@init(labels.import_button)" disabled="@load(not nav.isPermittedForEntityType('DICTIONARY','EDIT'))"/>
+        </toolbar>
+        <grid if="${not vmcalc.entityMeta.hierarchical}"
+              model="@bind(vmcalc.entityStatuses) @template(each.editingStatus ? 'editable' : 'noneditable')" vflex="1" hflex="1">
+            <custom-attributes org.zkoss.zul.nativebar="false"/>
+            <columns sizable="true" sclass="sizable">
+                <column label="@init(vmcalc.entityMeta.keyAttribute.name.getDescription(sessionScope.userProfile.locale))"/>
+
+                <forEach items="@load(vmcalc.attributes)" var="each" varStatus="eachStatus">
+                    <column label="@load(each.name.getDescription(sessionScope.userProfile.locale))"/>
+                </forEach>
+
+                <column align="center"/>
+            </columns>
+            <template name="noneditable" var="item">
+                <row onClick="@command('editEntity', entityStatus=item, editable=editable)" style="cursor : pointer">
+                    <label value="@load(item.entity.key)" hflex="1" tooltiptext="@load(item.entity.key)"/>
+                    <div forEach="${vmcalc.attributes}">
+                        <custom-attributes each="${each}"/>
+                        <editEntitiesNoneditable innerItem="@ref(item)" innerEach="@ref(each)" innerEditable="@ref(editable)"/>
+                    </div>
+
+                    <div>
+                        <button iconSclass="z-icon-pencil" autodisable="self"
+                                onClick="@command('changeEditableStatus', entityStatus=item)"
+                                tooltiptext="@init(labels.edit_button)" sclass="button-icon"
+                                disabled="@load(sessionScope.dataSlice.getDataSliceDateSet(vmcalc.entityMeta.key) or not editable or (not nav.isPermittedForEntityType('DICTIONARY','EDIT')))"/>
+                        <button iconSclass="z-icon-minus" autodisable="self" onClick="@command('removeEntityStatus', entityStatus=item)"
+                                tooltiptext="@init(labels.delete_button)" sclass="button-icon"
+                                disabled="@load(sessionScope.dataSlice.getDataSliceDateSet(vmcalc.entityMeta.key) or not editable or (not nav.isPermittedForEntityType('DICTIONARY','REMOVE')))"/>
+                        <if test="${vmcalc.showFavorites}">
+                            <a onClick="@command('removeFavorite',entityStatus=item)" visible="@load(vmcalc.isFavorite(item.entity))"
+                               sclass="favorites-in"
+                               tooltiptext="@init(labels.remove_favorite)"
+                               disabled="@load(sessionScope.dataSlice.getDataSliceDateSet(vmcalc.entityMeta.key) or not editable)">
+                                <label zclass="z-icon-star"/>
+                            </a>
+                            <a onClick="@command('addFavorite',entityStatus=item)" visible="@load(not vmcalc.isFavorite(item.entity))"
+                               sclass="favorites-out"
+                               tooltiptext="@init(labels.add_favorite)"
+                               disabled="@load(sessionScope.dataSlice.getDataSliceDateSet(vmcalc.entityMeta.key) or not editable)">
+                                <label zclass="z-icon-star-o"/>
+                            </a>
+                        </if>
+                    </div>
+                </row>
+            </template>
+            <template name="editable" var="item">
+                <row>
+                    <textbox value="@load(item.entity.key) @validator(vmcalc.keyValidator) @save(item.entity.key, before='confirm')"
+                             constraint="/[0-9a-zA-Z_]{0,100}/" maxlength="30" hflex="1"
+                             disabled="@load(not empty item.entity.id or not editableKey)"/>
+
+                    <div forEach="${vmcalc.attributes}">
+                        <custom-attributes each="${each}"/>
+                        <editEntitiesEditable vflex="1" innerItem="@ref(item)" innerEach="@ref(each)" innerEditable="@ref(editable)"/>
+                    </div>
+                    <div>
+                        <button iconSclass="z-icon-check" onClick="@command('confirm', entityStatus=item)"
+                                tooltiptext="@init(labels.confirm_button)" sclass="button-icon" autodisable="self"/>
+                        <button iconSclass="z-icon-times" onClick="@command('decline', entityStatus=item)"
+                                tooltiptext="@init(labels.decline_button)" sclass="button-icon" autodisable="self"/>
+                        <if test="${vmcalc.showFavorites}">
+                            <span visible="@init(vmcalc.isFavorite(item.entity))" sclass="favorites-in" tooltiptext="@init(labels.in_favorites)">
+                                <label zclass="z-icon-star"/>
+                            </span>
+                            <span visible="@init(not vmcalc.isFavorite(item.entity))" sclass="favorites-out"
+                                  tooltiptext="@init(labels.not_in_favorites)">
+                                <label zclass="z-icon-star-o"/>
+                            </span>
+                        </if>
+                    </div>
+                </row>
+            </template>
+        </grid>
+        <paging pageSize="@load(vmcalc.pageSize)" totalSize="@load(vmcalc.totalSize)" activePage="@save(vmcalc.activePage)"
+                detailed="@bind(vmcalc.totalSize ne 0)" if="${not vmcalc.entityMeta.hierarchical}"/>
+
+        <tree if="${vmcalc.entityMeta.hierarchical}" model="@bind(vmcalc.entityTreeModel) @template(each.editingStatus ? 'editable' : 'noneditable')"
+              vflex="1" hflex="1">
+            <custom-attributes org.zkoss.zul.nativebar="false"/>
+
+            <treecols sizable="true" sclass="sizable" droppable="true" onDrop="@command('dropEntity', entityStatus=null)">
+                <treecol label="@init(vmcalc.entityMeta.keyAttribute.name.getDescription(sessionScope.userProfile.locale))"/>
+
+                <forEach items="@load(vmcalc.attributes)" var="each" varStatus="eachStatus">
+                    <treecol label="@load(each.name.getDescription(sessionScope.userProfile.locale))"/>
+                </forEach>
+
+                <treecol align="center"/>
+
+                <if test="@load(vmcalc.entitySupportsDepartmentMapping)">
+                    <treecol align="center" hflex="min" label="@init(labels.edit_entities_client_portal_departments)"/>
+                </if>
+            </treecols>
+
+            <template name="noneditable" var="item">
+                <treeitem onOpen="@command('openLeaf', entityStatus=item)">
+                    <treerow droppable="true" draggable="true" onDrop="@command('dropEntity', entityStatus=item)"
+                             onClick="@command('editEntity', entityStatus=item, editable=editable)" style="cursor : pointer">
+                        <treecell>
+                            <label value="@load(item.entity.key)" hflex="1" tooltiptext="@load(item.entity.key)"/>
+                        </treecell>
+                        <treecell forEach="${vmcalc.attributes}">
+                            <custom-attributes each="${each}"/>
+                            <editEntitiesNoneditable innerItem="@ref(item)" innerEach="@ref(each)" innerEditable="@ref(editable)"/>
+                        </treecell>
+                        <treecell>
+                            <div>
+                                <button iconSclass="z-icon-pencil" autodisable="self"
+                                        onClick="@command('changeEditableStatus', entityStatus=item)"
+                                        tooltiptext="@init(labels.edit_button)" sclass="button-icon"
+                                        disabled="@load(sessionScope.dataSlice.getDataSliceDateSet(vmcalc.entityMeta.key) or not editable or (not nav.isPermittedForEntityType('DICTIONARY','EDIT')))"/>
+                                <button iconSclass="z-icon-minus" autodisable="self" onClick="@command('removeEntityStatus', entityStatus=item)"
+                                        tooltiptext="@init(labels.delete_button)" sclass="button-icon"
+                                        disabled="@load(sessionScope.dataSlice.getDataSliceDateSet(vmcalc.entityMeta.key) or not editable or (not nav.isPermittedForEntityType('DICTIONARY','REMOVE')))"/>
+                                <if test="${vmcalc.showFavorites}">
+                                    <a onClick="@command('removeFavorite',entityStatus=item)" visible="@load(vmcalc.isFavorite(item.entity))"
+                                       sclass="favorites-in"
+                                       tooltiptext="@init(labels.remove_favorite)"
+                                       disabled="@load(sessionScope.dataSlice.getDataSliceDateSet(vmcalc.entityMeta.key) or not editable)">
+                                        <label zclass="z-icon-star"/>
+                                    </a>
+                                    <a onClick="@command('addFavorite',entityStatus=item)" visible="@load(not vmcalc.isFavorite(item.entity))"
+                                       sclass="favorites-out"
+                                       tooltiptext="@init(labels.add_favorite)"
+                                       disabled="@load(sessionScope.dataSlice.getDataSliceDateSet(vmcalc.entityMeta.key) or not editable)">
+                                        <label zclass="z-icon-star-o"/>
+                                    </a>
+                                </if>
+                            </div>
+                        </treecell>
+                        <if test="@load(vmcalc.entitySupportsDepartmentMapping)">
+                            <treecell>
+                                <button autodisable="self" iconSclass="z-icon-link"
+                                        tooltiptext="@init(labels.view_button)" sclass="button-icon"
+                                        onClick="@command('editDepartmentRef', entityStatus=item, isEdit=(not (sessionScope.dataSlice.getDataSliceDateSet(vmcalc.entityMeta.key) or not editable)))"/>
+                            </treecell>
+                        </if>
+                    </treerow>
+                </treeitem>
+            </template>
+            <template name="editable" var="item">
+                <treeitem onOpen="@command('openLeaf', entityStatus=item)">
+                    <treerow>
+                        <treecell>
+                            <textbox value="@load(item.entity.key) @validator(vmcalc.keyValidator) @save(item.entity.key, before='confirm')"
+                                     constraint="/[0-9a-zA-Z_]{0,100}/" maxlength="30" hflex="1"
+                                     disabled="@load(not empty item.entity.id or not editableKey)"/>
+                        </treecell>
+                        <treecell forEach="${vmcalc.attributes}">
+                            <custom-attributes each="${each}"/>
+                            <editEntitiesEditable vflex="1" innerItem="@ref(item)" innerEach="@ref(each)" innerEditable="@ref(editable)"/>
+                        </treecell>
+                        <treecell>
+                            <div>
+                                <button iconSclass="z-icon-check" onClick="@command('confirm', entityStatus=item)"
+                                        tooltiptext="@init(labels.confirm_button)" sclass="button-icon" autodisable="self"/>
+                                <button iconSclass="z-icon-times" onClick="@command('decline', entityStatus=item)"
+                                        tooltiptext="@init(labels.decline_button)" sclass="button-icon" autodisable="self"/>
+                                <if test="${vmcalc.showFavorites}">
+                                    <span visible="@init(vmcalc.isFavorite(item.entity))" sclass="favorites-in"
+                                          tooltiptext="@init(labels.in_favorites)">
+                                        <label zclass="z-icon-star"/>
+                                    </span>
+                                    <span visible="@init(not vmcalc.isFavorite(item.entity))" sclass="favorites-out"
+                                          tooltiptext="@init(labels.not_in_favorites)">
+                                        <label zclass="z-icon-star-o"/>
+                                    </span>
+                                </if>
+                            </div>
+                        </treecell>
+                    </treerow>
+                </treeitem>
+            </template>
+        </tree>
+    </vbox>
+</zk>

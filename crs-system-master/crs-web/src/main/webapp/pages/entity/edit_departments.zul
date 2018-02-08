@@ -1,0 +1,14 @@
+<zk>
+    <window viewModel="@id('vmcalc') @init('ru.masterdm.crs.web.model.entity.EditDepartmentsViewModel')"
+            contentStyle="overflow:auto;" height="100%">
+
+        <caption>
+            <label value="${labels.layout_settings_title}"/>
+            <label zclass="z-icon-angle-right"/>
+            <label value="${labels.edit_departments_title}"/>
+        </caption>
+
+        <?component name="editEntities" macroURI="/components/entity/edit_entities.zul"?>
+        <editEntities simpleFilter="@ref(true)" showDataSlice="@ref(false)" editable="@ref(true)" editableKey="@ref(true)" showExportImport="@ref(false)" vflex="1"/>
+    </window>
+</zk>

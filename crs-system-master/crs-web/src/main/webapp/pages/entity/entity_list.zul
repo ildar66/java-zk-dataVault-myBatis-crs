@@ -1,0 +1,47 @@
+<zk>
+    <window apply="org.zkoss.bind.BindComposer"
+            viewModel="@id('vm') @init('ru.masterdm.crs.web.model.entity.EntityListViewModel')"
+            contentStyle="overflow:auto;" height="100%">
+
+        <caption>
+            <label value="${labels.layout_entity_list_title}"/>
+            <label zclass="z-icon-angle-right"/>
+            <label value="${labels.entity_list_title}"/>
+        </caption>
+
+        <vbox vflex="1" hflex="1">
+            <hbox hflex="1">
+                <span sclass="z-icon-filter"/>
+                <textbox instant="true" width="200px" value="@bind(vm.entityMetaFilter)" onChange="@command('changeFilter')"/>
+            </hbox>
+            <tree model="@load(vm.entityMetaTreeModel) @template(not empty each.group ? 'group' : 'notgroup')" vflex="1" hflex="1">
+                <custom-attributes org.zkoss.zul.nativebar="false"/>
+                <treecols sizable="true" sclass="sizable">
+                    <treecol label="@init(labels.key)"/>
+                    <treecol label="@init(labels.name)"/>
+                    <treecol label="@init(labels.comment)"/>
+                </treecols>
+                <template name="notgroup" var="each">
+                    <treeitem open="@load(true)">
+                        <treerow onClick="@command('editEntities', entityMetaStatus=each)" style="cursor : pointer">
+                            <custom-attributes entityMetaStatus="${each}"/>
+                            <treecell label="@init(each.entityMeta.key)"/>
+                            <treecell label="@load(each.entityMeta.name.getDescription(sessionScope.userProfile.locale))"/>
+                            <treecell label="@load(each.entityMeta.comment.getDescription(sessionScope.userProfile.locale))"/>
+                        </treerow>
+                    </treeitem>
+                </template>
+                <template name="group" var="each" status="eachStatus">
+                    <treeitem open="@load(true)">
+                        <treerow>
+                            <custom-attributes entityMetaStatus="${each}"/>
+                            <treecell label="@init(each.group.key)"/>
+                            <treecell label="@load(each.group.name.getDescription(sessionScope.userProfile.locale))"/>
+                            <treecell></treecell>
+                        </treerow>
+                    </treeitem>
+                </template>
+            </tree>
+        </vbox>
+    </window>
+</zk>

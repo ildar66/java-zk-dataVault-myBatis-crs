@@ -1,0 +1,244 @@
+<zk>
+    <window title="@bind(vm.title)"
+            apply="org.zkoss.bind.BindComposer"
+            viewModel="@id('vm') @init('ru.masterdm.crs.web.model.entity.EditEntityViewModel')"
+            position="center,center" closable="true" width="60%" action="show: slideDown;hide: slideUp"
+            onCancel="@command('detachWindow')"
+            contentStyle="overflow:auto;" sizable="true"
+            maximizable="true">
+        <vlayout>
+            <vbox width="100%">
+                <hbox align="middle">
+                    <label value="@init(vm.entityStatus.entity.meta.keyAttribute.name.getDescription(sessionScope.userProfile.locale).concat(':'))"/>
+                    <textbox value="@init(vm.entityStatus.entity.key)" disabled="true" tooltiptext="@init(vm.entityStatus.entity.key)"/>
+                </hbox>
+                <separator/>
+            </vbox>
+            <grid hflex="1" vflex="1"
+                  model="@bind(vm.attributes) @template(vm.entityStatus.editingStatus ? 'editable' : 'noneditable')">
+                <columns>
+                    <column label="${labels.edit_entities_name}" width="25%"/>
+                    <column label="${labels.value}"/>
+                </columns>
+                <template name="editable">
+                    <row>
+                        <label value="@bind(each.meta.name.getDescription(sessionScope.userProfile.locale))"
+                               tooltiptext="@load(each.meta.name.getDescription(sessionScope.userProfile.locale))"/>
+
+                        <checkbox checked="@load(each.value) @save(each.value, before='saveEntity')" if="${each.meta.type == 'BOOLEAN'}"/>
+
+                        <textbox value="@load(each.value) @save(each.value, before='saveEntity')" width="99%"
+                                 if="${each.meta.type == 'STRING' and each.meta.nullable and not each.meta.multilang}"
+                                 tooltiptext="@load(each.value)" maxlength="@load(nav.stringMaxLength)"/>
+
+                        <textbox
+                                value="@load(each.value) @save(each.value, before='saveEntity')"
+                                width="99%"
+                                if="${each.meta.type == 'STRING' and not each.meta.nullable and not each.meta.multilang}"
+                                tooltiptext="@load(each.value)" constraint="no empty" maxlength="@load(nav.stringMaxLength)"/>
+
+                        <textbox value="@load(each.getValue(sessionScope.userProfile.locale)) @save(each.valueRu, before='saveEntity')"
+                                 width="99%"
+                                 if="${each.meta.type == 'STRING' and each.meta.nullable and each.meta.multilang  and sessionScope.userProfile.locale.name() eq 'RU'}"
+                                 tooltiptext="@load(each.getValue(sessionScope.userProfile.locale))" maxlength="@load(nav.stringMaxLength)"/>
+
+                        <textbox value="@load(each.getValue(sessionScope.userProfile.locale)) @save(each.valueEn, before='saveEntity')"
+                                 width="99%"
+                                 if="${each.meta.type == 'STRING' and each.meta.nullable and each.meta.multilang  and sessionScope.userProfile.locale.name() ne 'RU'}"
+                                 tooltiptext="@load(each.getValue(sessionScope.userProfile.locale))" maxlength="@load(nav.stringMaxLength)"/>
+
+
+                        <textbox
+                                value="@load(each.getValue(sessionScope.userProfile.locale)) @save(each.valueRu, before='saveEntity')"
+                                width="99%"
+                                if="${each.meta.type == 'STRING' and not each.meta.nullable and each.meta.multilang and sessionScope.userProfile.locale.name() eq 'RU'}"
+                                tooltiptext="@load(each.getValue(sessionScope.userProfile.locale))"
+                                constraint="no empty" maxlength="@load(nav.stringMaxLength)"/>
+
+                        <textbox
+                                value="@load(each.getValue(sessionScope.userProfile.locale)) @save(each.valueEn, before='saveEntity')"
+                                width="99%"
+                                if="${each.meta.type == 'STRING' and not each.meta.nullable and each.meta.multilang and sessionScope.userProfile.locale.name() ne 'RU'}"
+                                tooltiptext="@load(each.getValue(sessionScope.userProfile.locale))"
+                                constraint="no empty" maxlength="@load(nav.stringMaxLength)"/>
+
+                        <vbox if="${each.meta.type == 'TEXT'}" width="99%">
+                            <button disabled="true" autodisable="self" iconSclass="z-icon-asterisk" if="${each.meta.type == 'TEXT'}"
+                                    tooltiptext="@init(labels.edit_button)" sclass="button-icon"
+                                    onClick="@command('editEntityText', entityStatus=vm.entityStatus, attributeMetaKey=each.meta.key, isEdit=false)"/>
+
+                            <textbox value="@load(each.value) @save(each.value, before='saveEntity')" width="99%"
+                                     if="${each.meta.type == 'TEXT' and each.meta.nullable and not each.meta.multilang}"
+                                     tooltiptext="@load(each.value)" rows="10" cols="1000" style="resize:none;"/>
+
+                            <textbox value="@load(each.value) @save(each.value, before='saveEntity')"
+                                     width="99%"
+                                     if="${each.meta.type == 'TEXT' and not each.meta.nullable and not each.meta.multilang}"
+                                     tooltiptext="@load(each.value)" constraint="no empty" rows="10" cols="1000" style="resize:none;"/>
+
+
+                            <textbox value="@load(each.getValue(sessionScope.userProfile.locale)) @save(each.valueRu, before='saveEntity')"
+                                     width="99%"
+                                     if="${each.meta.type == 'TEXT' and each.meta.nullable and each.meta.multilang  and sessionScope.userProfile.locale.name() eq 'RU'}"
+                                     tooltiptext="@load(each.getValue(sessionScope.userProfile.locale))" rows="10" cols="1000"
+                                     style="resize:none;"/>
+
+                            <textbox value="@load(each.getValue(sessionScope.userProfile.locale)) @save(each.valueEn, before='saveEntity')"
+                                     width="99%"
+                                     if="${each.meta.type == 'TEXT' and each.meta.nullable and each.meta.multilang  and sessionScope.userProfile.locale.name() ne 'RU'}"
+                                     tooltiptext="@load(each.getValue(sessionScope.userProfile.locale))" rows="10" cols="1000"
+                                     style="resize:none;"/>
+
+                            <textbox
+                                    value="@load(each.getValue(sessionScope.userProfile.locale)) @save(each.valueRu, before='saveEntity')"
+                                    width="99%"
+                                    if="${each.meta.type == 'TEXT' and not each.meta.nullable and each.meta.multilang and sessionScope.userProfile.locale.name() eq 'RU'}"
+                                    tooltiptext="@load(each.getValue(sessionScope.userProfile.locale))"
+                                    constraint="no empty" rows="10" cols="1000" style="resize:none;"/>
+
+                            <textbox
+                                    value="@load(each.getValue(sessionScope.userProfile.locale)) @save(each.valueEn, before='saveEntity')"
+                                    width="99%"
+                                    if="${each.meta.type == 'TEXT' and not each.meta.nullable and each.meta.multilang and sessionScope.userProfile.locale.name() ne 'RU'}"
+                                    tooltiptext="@load(each.getValue(sessionScope.userProfile.locale))"
+                                    constraint="no empty" rows="10" cols="1000" style="resize:none;"/>
+
+                        </vbox>
+
+                        <div if="${each.meta.type == 'FILE'}">
+                            <button iconSclass="z-icon-paperclip" upload="true,maxsize=50000"
+                                    onUpload="@command('fileUpload', fileInfoAttribute=each)"/>
+                            <div visible="@load(not each.linkRemoved)">
+                                <button iconSclass="z-icon-times" onClick="@command('unattachFile', fileInfoAttribute=each)"
+                                        visible="@load(not empty each.value)"/>
+                                <a label="@load(each.value)"
+                                   onClick="@command('fileDownload', fileInfoAttribute=each)"
+                                   sclass="download_link"
+                                   autodisable="self"/>
+                                <separator/>
+                                <textbox
+                                        value="@load(each.description) @save(each.description, before='saveEntity')"
+                                        placeholder="@load(labels.edit_entities_description_label)"
+                                        maxlength="@load(nav.stringMaxLength)" rows="5" width="100%"/>
+                            </div>
+                        </div>
+
+                        <decimalbox width="99%"
+                                    value="@load(each.value) @save(each.value, before='saveEntity')"
+                                    if="${each.meta.type == 'NUMBER' and each.meta.nullable}"/>
+
+                        <decimalbox width="99%"
+                                    value="@load(each.value) @save(each.value, before='saveEntity')"
+                                    if="${each.meta.type == 'NUMBER' and not each.meta.nullable}" constraint="no empty"/>
+
+                        <datebox width="99%" format="${labels.date_format}"
+                                 value="@load(each.value) @converter('ru.masterdm.crs.web.util.converter.DateConverter') @save(each.value, before='saveEntity')"
+                                 if="${each.meta.type == 'DATE' and each.meta.nullable}"/>
+
+                        <datebox width="99%" format="${labels.date_format}"
+                                 value="@load(each.value) @converter('ru.masterdm.crs.web.util.converter.DateConverter') @save(each.value, before='saveEntity')"
+                                 if="${each.meta.type == 'DATE' and not each.meta.nullable}" constraint="no empty"/>
+
+                        <datebox width="99%" format="${labels.date_time_format}"
+                                 value="@load(each.value) @converter('ru.masterdm.crs.web.util.converter.DateTimeConverter') @save(each.value, before='saveEntity')"
+                                 if="${each.meta.type == 'DATETIME' and each.meta.nullable}"/>
+
+                        <datebox width="99%" format="${labels.date_time_format}"
+                                 value="@load(each.value) @converter('ru.masterdm.crs.web.util.converter.DateTimeConverter') @save(each.value, before='saveEntity')"
+                                 if="${each.meta.type == 'DATETIME' and not each.meta.nullable}" constraint="no empty"/>
+
+                        <hbox if="${each.meta.type == 'REFERENCE'}">
+                            <button disabled="true" autodisable="self" iconSclass="z-icon-link" if="${each.meta.type == 'REFERENCE'}"
+                                    tooltiptext="@init(labels.edit_button)" sclass="button-icon"
+                                    onClick="@command('editEntityRef', entityStatus=vm.entityStatus, attributeMetaKey=each.meta.key, isEdit=false)"/>
+
+                            <vbox>
+                                <label forEach="${each.value}" forEachBegin="0" forEachEnd="4" value="${vm.getAttributeValue(each)}"/>
+                                <label if="${each.value.size() > 5}" value="..."/>
+                            </vbox>
+                        </hbox>
+                    </row>
+                </template>
+                <template name="noneditable">
+                    <row>
+                        <label value="@bind(each.meta.name.getDescription(sessionScope.userProfile.locale))"
+                               tooltiptext="@load(each.meta.name.getDescription(sessionScope.userProfile.locale))"/>
+
+                        <checkbox disabled="true" checked="@load(each.value)"
+                                  if="${each.meta.type == 'BOOLEAN'}"/>
+
+                        <label value="@load(each.value)" if="${each.meta.type == 'STRING' and not each.meta.multilang}"
+                               tooltiptext="@load(each.value)"/>
+
+                        <label value="@load(each.getValue(sessionScope.userProfile.locale))"
+                               if="${each.meta.type == 'STRING' and each.meta.multilang}"
+                               tooltiptext="@load(each.getValue(sessionScope.userProfile.locale))"/>
+
+                        <vbox if="${each.meta.type == 'TEXT'}">
+                            <button autodisable="self" iconSclass="z-icon-asterisk" if="${each.meta.type == 'TEXT'}"
+                                    tooltiptext="@init(labels.view_button)" sclass="button-icon"
+                                    onClick="@command('editEntityText', entityStatus=vm.entityStatus, attributeMetaKey=each.meta.key, isEdit=(not (sessionScope.dataSlice.getDataSliceDateSet(vm.entityStatus.entity.meta.key) or not vm.editable)))"/>
+
+                            <label value="@load(each.value)"
+                                   if="${each.meta.type == 'TEXT' and not each.meta.multilang}"
+                                   tooltiptext="@load(each.value)" maxlength="512"/>
+
+                            <label value="@load(each.getValue(sessionScope.userProfile.locale))"
+                                   if="${each.meta.type == 'TEXT' and each.meta.multilang}"
+                                   tooltiptext="@load(each.getValue(sessionScope.userProfile.locale))" maxlength="512"/>
+                        </vbox>
+
+                        <vbox if="${each.meta.type == 'FILE'}" hflex="1">
+                            <a label="@load(each.value)"
+                               onClick="@command('fileDownload', fileInfoAttribute=each)"
+                               sclass="download_link" visible="@load(not each.linkRemoved)"
+                               if="${each.meta.type == 'FILE'}" autodisable="self"/>
+                            <separator/>
+                            <textbox hflex="1"
+                                     value="@load(each.description)" placeholder="@load(labels.edit_entities_description_label)"
+                                     disabled="true" maxlength="@load(nav.stringMaxLength)" rows="5"/>
+                        </vbox>
+
+                        <label value="@load(each.value)" if="${each.meta.type == 'NUMBER'}"/>
+
+                        <label value="@load(each.value) @converter('ru.masterdm.crs.web.util.converter.DateFormatConverter')"
+                               if="${each.meta.type == 'DATE'}"/>
+
+                        <label value="@load(each.value) @converter('ru.masterdm.crs.web.util.converter.DateTimeFormatConverter')"
+                               if="${each.meta.type == 'DATETIME'}"/>
+
+                        <hbox if="${each.meta.type == 'REFERENCE'}">
+                            <button autodisable="self" iconSclass="z-icon-link"
+                                    tooltiptext="@init(labels.view_button)" sclass="button-icon"
+                                    onClick="@command('editEntityRef', entityStatus=vm.entityStatus, attributeMetaKey=each.meta.key, isEdit=(not (sessionScope.dataSlice.getDataSliceDateSet(vm.entityStatus.entity.meta.key) or not vm.editable))))"
+                                    disabled="@init(vm.getReferenceAttributeDisabled(each.meta))"
+                                    visible="@init(not vm.referencesAttributeMetaKeys.contains(each.meta.key))"/>
+                            <button autodisable="self" iconSclass="z-icon-link"
+                                    tooltiptext="@init(labels.view_button)" sclass="button-icon"
+                                    onClick="@command('editEntityReferences', entityStatus=vm.entityStatus, attributeMetaKey=each.meta.key, editable=(not (sessionScope.dataSlice.getDataSliceDateSet(vm.entityStatus.entity.meta.key) or not vm.editable))))"
+                                    disabled="@init(vm.getReferenceAttributeDisabled(each.meta))"
+                                    visible="@init(vm.referencesAttributeMetaKeys.contains(each.meta.key))"/>
+                            <vbox>
+                                <label forEach="${each.value}" forEachBegin="0" forEachEnd="4" value="${vm.getAttributeValue(each)}"/>
+                                <label if="${each.value.size() > 5}" value="..."/>
+                            </vbox>
+                        </hbox>
+                    </row>
+                </template>
+            </grid>
+            <vlayout>
+                <separator/>
+                <hbox width="100%" pack="end">
+                    <button onClick="@command('saveEntity')" label="${labels.save_button}"
+                            visible="@bind(vm.entityStatus.editingStatus)" tooltiptext="@init(labels.save_button)" sclass="button-link"/>
+                    <button autodisable="self" onClick="@command('changeEditableStatus')"
+                            visible="@bind(vm.editable and not vm.entityStatus.editingStatus and not sessionScope.dataSlice.getDataSliceDateSet(vm.entityStatus.entity.meta.key))"
+                            label="@init(labels.edit_button)" sclass="button-link"
+                            disabled="@load(not nav.isPermittedForEntityType('DICTIONARY','EDIT'))"/>
+                    <button onClick="@command('detachWindow')" label="${labels.close_button}"
+                            tooltiptext="@init(labels.close_button)" sclass="button-link"/>
+                </hbox>
+            </vlayout>
+        </vlayout>
+    </window>
+</zk>

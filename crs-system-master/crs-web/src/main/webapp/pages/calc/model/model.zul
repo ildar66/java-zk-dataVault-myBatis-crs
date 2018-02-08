@@ -1,0 +1,304 @@
+<zk>
+    <window border="none" height="100%"
+            contentStyle="overflow:auto"
+            apply="org.zkoss.bind.BindComposer"
+            viewModel="@id('vm') @init('ru.masterdm.crs.web.model.calc.model.ModelViewModel')">
+        <caption>
+            <label value="${labels.layout_calculations_title}"/>
+            <label zclass="z-icon-angle-right"/>
+            <label value="${labels.model_list_title}" style="cursor:pointer" onClick="@command('navigateModels')"/>
+            <label zclass="z-icon-angle-right"/>
+            <label value="${labels.model_title}"/>
+            <toolbar>
+                <toolbarbutton label="${labels.save_button}" onClick="@command('persistModel')" iconSclass="z-icon-save"
+                               disabled="@load(not nav.isPermitted('CALC_MODEL','EDIT'))"/>
+                <toolbarbutton label="${labels.publish_button}" onClick="@command('publishModel')" iconSclass="z-icon-paper-plane"
+                               visible="@load(vm.model.published ? false : true)" disabled="@load(not nav.isPermitted('CALC_MODEL','PUBLISH'))"/>
+            </toolbar>
+        </caption>
+
+        <borderlayout>
+            <center border="none">
+                <borderlayout>
+                    <north border="none" splittable="false">
+                        <grid sclass="grid-form">
+                            <columns>
+                                <column hflex="1"/>
+                                <column hflex="2"/>
+                            </columns>
+                            <rows>
+                                <row>
+                                    <label value="@init(vm.model.meta.keyAttribute.name.getDescription(sessionScope.userProfile.locale))"/>
+                                    <textbox value="@bind(vm.model.key) @save(vm.model.key, before='persistModel')"
+                                             width="250px" maxlength="19"
+                                             disabled="@load((vm.model.id==null) ? false : true)"
+                                             constraint="@init(vm.entityKeyConstraint)"/>
+                                </row>
+                                <row>
+                                    <label value="@init(vm.getAttributeLabel('NAME_RU'))"/>
+                                    <textbox
+                                            value="@bind(vm.model.name.descriptionRu) @save(vm.model.name.descriptionRu, before={'persistModel', 'publishModel'})"
+                                            width="95%" maxlength="@load(nav.stringMaxLength)" constraint="no empty"/>
+                                </row>
+                                <row>
+                                    <label value="@init(vm.getAttributeLabel('NAME_EN'))"/>
+                                    <textbox
+                                            value="@bind(vm.model.name.descriptionEn) @save(vm.model.name.descriptionEn, before={'persistModel', 'publishModel'})"
+                                            width="95%" maxlength="@load(nav.stringMaxLength)" constraint="no empty"/>
+                                </row>
+                                <row>
+                                    <label value="@init(vm.getAttributeLabel('PUBLISHED'))"/>
+                                    <checkbox
+                                            checked="@bind(vm.model.published) @save(vm.model.published, before={'persistModel', 'publishModel'})"
+                                            disabled="true"/>
+                                </row>
+                                <row>
+                                    <label value="@init(vm.getAttributeLabel('VERSION'))"/>
+                                    <label value="@init(vm.model.version)"/>
+                                </row>
+                                <row>
+                                    <label value="@init(vm.getAttributeLabel('COMMENT_RU'))"/>
+                                    <textbox
+                                            value="@bind(vm.model.comment.descriptionRu) @save(vm.model.comment.descriptionRu, before={'persistModel', 'publishModel'})"
+                                            width="95%" maxlength="@load(nav.stringMaxLength)"/>
+                                </row>
+                                <row>
+                                    <label value="@init(vm.getAttributeLabel('COMMENT_EN'))"/>
+                                    <textbox
+                                            value="@bind(vm.model.comment.descriptionEn) @save(vm.model.comment.descriptionEn, before={'persistModel', 'publishModel'})"
+                                            width="95%" maxlength="@load(nav.stringMaxLength)"/>
+                                </row>
+                                <row>
+                                    <label value="@init(vm.getAttributeLabel('PERIODICITY'))"/>
+                                    <combobox readonly="true" model="@load(vm.periodicities)" selectedItem="@bind(vm.model.periodicity)">
+                                        <template name="model" var="periodicity">
+                                            <comboitem label="@load(vm.getPeriodicityLabel(periodicity))"/>
+                                        </template>
+                                    </combobox>
+                                </row>
+                                <row>
+                                    <label value="@init(vm.getAttributeLabel('ACTUALITY'))"/>
+                                    <datebox format="@init(vm.dateTimeFormat)"
+                                             value="@bind(vm.model.actuality) @converter('ru.masterdm.crs.web.util.converter.DateTimeConverter') @save(vm.model.actuality, before={'persistModel', 'publishModel'})"
+                                             width="140px"
+                                             constraint="no empty" onChange="@command('changeActuality')"/>
+                                </row>
+                            </rows>
+                        </grid>
+                    </north>
+                    <center border="none">
+                        <tabbox height="100%">
+                            <tabs>
+                                <tab label="${labels.formula_calculated_formulas}"/>
+                                <tab label="${labels.model_classifiers}"/>
+                                <tab label="${labels.model_templates}"/>
+                                <tab label="${labels.model_forms}"/>
+                            </tabs>
+                            <tabpanels>
+                                <tabpanel>
+                                    <grid model="@load(vm.model.formulas)"
+                                          width="100%" vflex="1" droppable="formula" onDrop="@command('dropFormula')">
+                                        <custom-attributes org.zkoss.zul.nativebar="false"/>
+                                        <columns>
+                                            <column width="220px"
+                                                    label="@init(vm.formulaEntityMeta.keyAttribute.name.getDescription(sessionScope.userProfile.locale))"/>
+                                            <column label="${labels.name}"/>
+                                            <column width="50px"/>
+                                        </columns>
+                                        <template name="model">
+                                            <row>
+                                                <label value="@load(each.key)"/>
+                                                <label value="@load(each.name.getDescription(sessionScope.userProfile.locale))"/>
+                                                <button iconSclass="z-icon-minus" autodisable="self"
+                                                        onClick="@command('removeFormula', formula=each)"
+                                                        tooltiptext="@init(labels.delete_button)" sclass="button-icon"/>
+                                            </row>
+                                        </template>
+                                    </grid>
+                                </tabpanel>
+                                <tabpanel>
+                                    <grid model="@load(vm.model.classifiers)"
+                                          width="100%" vflex="1" droppable="classifier" onDrop="@command('dropClassifier')">
+                                        <custom-attributes org.zkoss.zul.nativebar="false"/>
+                                        <columns>
+                                            <column width="220px"
+                                                    label="@init(vm.classifierEntityMeta.keyAttribute.name.getDescription(sessionScope.userProfile.locale))"/>
+                                            <column label="${labels.name}"/>
+                                            <column width="50px"/>
+                                        </columns>
+                                        <template name="model">
+                                            <row>
+                                                <label value="@load(each.key)"/>
+                                                <label value="@load(each.name.getDescription(sessionScope.userProfile.locale))"/>
+                                                <button iconSclass="z-icon-minus" autodisable="self"
+                                                        onClick="@command('removeClassifier', classifier=each)"
+                                                        tooltiptext="@init(labels.delete_button)" sclass="button-icon"/>
+                                            </row>
+                                        </template>
+                                    </grid>
+                                </tabpanel>
+                                <tabpanel>
+                                    <grid model="@load(vm.model.formTemplates)"
+                                          width="100%" vflex="1" droppable="template" onDrop="@command('dropTemplate')">
+                                        <custom-attributes org.zkoss.zul.nativebar="false"/>
+                                        <columns>
+                                            <column label="${labels.name}" hflex="2"/>
+                                            <column label="@init(labels.templates_column_type)" hflex="1"/>
+                                            <column width="50px"/>
+                                        </columns>
+                                        <template name="model">
+                                            <row>
+                                                <label value="@load(each.name.getDescription(sessionScope.userProfile.locale))"/>
+                                                <label value="@load(each.type.name())"/>
+                                                <button iconSclass="z-icon-minus" autodisable="self"
+                                                        onClick="@command('removeTemplate', template=each)"
+                                                        tooltiptext="@init(labels.delete_button)" sclass="button-icon"/>
+                                            </row>
+                                        </template>
+                                    </grid>
+                                </tabpanel>
+                                <tabpanel>
+                                    <grid model="@load(vm.inputForms)"
+                                          width="100%" vflex="1">
+                                        <custom-attributes org.zkoss.zul.nativebar="false"/>
+                                        <columns>
+                                            <column width="220px"
+                                                    label="@init(vm.formEntityMeta.keyAttribute.name.getDescription(sessionScope.userProfile.locale))"/>
+                                            <column label="${labels.name}"/>
+                                            <column label="${labels.model_form_field_date}"/>
+                                            <column label="${labels.model_form_periods_number}"/>
+                                        </columns>
+                                        <template name="model">
+                                            <row>
+                                                <label value="@load(each.entity.key)"/>
+                                                <label value="@load(each.entity.name.getDescription(sessionScope.userProfile.locale))"/>
+                                                <combobox readonly="true"
+                                                          model="@load(vm.getDateAttributes(each.entity))"
+                                                          width="99%" selectedItem="@load(vm.getSelectedInputFormDateAttribute(each))"
+                                                          onSelect="@command('selectInputFormDateAttribute', entityAttribute=each, val=self.selectedItem.value)">
+                                                    <template name="model" var="attribute">
+                                                        <comboitem
+                                                                label="@load(attribute.name.getDescription(sessionScope.userProfile.locale))"
+                                                                value="@load(attribute.key)"/>
+                                                    </template>
+                                                </combobox>
+                                                <decimalbox value="@load(each.satellite.getAttribute(vm.periodCountKey).value)
+                                                                        @save(each.satellite.getAttribute(vm.periodCountKey).value,
+                                                                        before={'persistModel','publishModel','selectInputFormDateAttribute'})"
+                                                            disabled="@load(vm.getSelectedInputFormDateAttribute(each) eq null)"
+                                                            format="##"
+                                                            constraint="@load((vm.getSelectedInputFormDateAttribute(each) eq null ? '' : 'no empty')
+                                                                                    .concat(',no negative'))"/>
+                                            </row>
+                                        </template>
+                                    </grid>
+                                </tabpanel>
+                            </tabpanels>
+                        </tabbox>
+                    </center>
+                </borderlayout>
+            </center>
+            <east width="35%" border="none" splittable="false">
+                <tabbox vflex="1" hflex="1" mold="accordion">
+                    <tabs>
+                        <tab label="${labels.formula_calculated_formulas}"/>
+                        <tab label="${labels.model_classifiers}"/>
+                        <tab label="${labels.model_templates}"/>
+                    </tabs>
+                    <tabpanels>
+                        <tabpanel
+                                viewModel="@id('ftree') @init('ru.masterdm.crs.web.model.calc.formula.FormulaListViewModel', filterKey='_MODEL', actuality=vm.model.actuality)">
+                            <hbox sizedByContent="true">
+                                <button onClick="@command('editCalculationsFilter')" label="@init(labels.filter_button)"
+                                        iconSclass="z-icon-filter" autodisable="self" sclass="button-link"/>
+                                <chosenbox onClick="@command('editCalculationsFilter')"
+                                           onSelect="@command('deleteCalculationsFilter')"
+                                           model="@bind(ftree.entityFilters)"/>
+                            </hbox>
+                            <separator/>
+                            <tree model="@load(ftree.treeModel)" vflex="1">
+                                <custom-attributes org.zkoss.zul.nativebar="false"/>
+                                <treecols>
+                                    <treecol label="@init(ftree.entityMeta.keyAttribute.name.getDescription(sessionScope.userProfile.locale))"/>
+                                    <treecol label="${labels.name}"/>
+                                    <treecol label="" width="30px"/>
+                                </treecols>
+                                <template name="model" var="fm">
+                                    <treeitem>
+                                        <treerow draggable="@bind('formula')">
+                                            <treecell label="@init(fm.key)" tooltiptext="@init(fm.key)"/>
+                                            <treecell label="@init(fm.name.getDescription(sessionScope.userProfile.locale))"
+                                                      tooltiptext="@init(fm.name.getDescription(sessionScope.userProfile.locale))"/>
+                                            <treecell iconSclass="z-icon-star" visible="@load(vm.selectedFormulas.contains(fm))"/>
+                                        </treerow>
+                                    </treeitem>
+                                </template>
+                            </tree>
+                        </tabpanel>
+                        <tabpanel
+                                viewModel="@id('ctree') @init('ru.masterdm.crs.web.model.entity.meta.ClassifierMetaListViewModel', actuality=vm.model.actuality)">
+                            <hbox width="100%">
+                                <span sclass="z-icon-filter"/>
+                                <textbox instant="true" hflex="1" value="@bind(ctree.entityMetaFilter)" onChange="@command('changeFilter')"/>
+                            </hbox>
+                            <separator/>
+                            <tree model="@load(ctree.entityMetaTreeModel) @template(not empty each.group ? 'group' : 'notgroup')" vflex="1">
+                                <custom-attributes org.zkoss.zul.nativebar="false"/>
+                                <treecols sizable="true" sclass="sizable">
+                                    <treecol label="@init(labels.key)"/>
+                                    <treecol label="@init(labels.name)"/>
+                                </treecols>
+                                <template name="notgroup" var="each">
+                                    <treeitem open="@load(true)" visible="@load(not vm.model.classifiers.contains(each.entityMeta))">
+                                        <treerow draggable="@bind('classifier')" style="cursor : pointer">
+                                            <custom-attributes entityMetaStatus="${each}"/>
+                                            <treecell label="@init(each.entityMeta.key)"/>
+                                            <treecell>
+                                                <label value="@init(each.entityMeta.name.getDescription(sessionScope.userProfile.locale))"
+                                                       maxlength="50"
+                                                       tooltiptext="@init(each.entityMeta.name.getDescription(sessionScope.userProfile.locale))"/>
+                                            </treecell>
+                                        </treerow>
+                                    </treeitem>
+                                </template>
+                                <template name="group" var="each" status="eachStatus">
+                                    <treeitem open="@load(true)">
+                                        <treerow draggable="@bind('classifier')" style="cursor : pointer">
+                                            <custom-attributes entityMetaStatus="${each}"/>
+                                            <treecell label="@init(each.group.key)"/>
+                                            <treecell>
+                                                <label value="@init(each.group.name.getDescription(sessionScope.userProfile.locale))" maxlength="50"
+                                                       tooltiptext="@init(each.group.name.getDescription(sessionScope.userProfile.locale))"/>
+                                            </treecell>
+                                        </treerow>
+                                    </treeitem>
+                                </template>
+                            </tree>
+                        </tabpanel>
+                        <tabpanel>
+                            <hbox width="100%">
+                                <span sclass="z-icon-filter"/>
+                                <textbox instant="true" hflex="1" value="@bind(vm.formTemplateFilter)"
+                                         onChange="@command('changeFormTemplateFilter')"/>
+                            </hbox>
+                            <separator/>
+                            <grid vflex="1" model="@load(vm.formTemplatesFiltered)">
+                                <custom-attributes org.zkoss.zul.nativebar="false"/>
+                                <columns>
+                                    <column label="@init(labels.name)" hflex="2"/>
+                                    <column label="@init(labels.templates_column_type)" hflex="1" sort="auto(type)"/>
+                                </columns>
+                                <template name="model">
+                                    <row draggable="@load('template')" style="cursor:pointer">
+                                        <label value="@load(each.name.getDescription(sessionScope.userProfile.locale))"/>
+                                        <label value="@load(each.type.name())"/>
+                                    </row>
+                                </template>
+                            </grid>
+                        </tabpanel>
+                    </tabpanels>
+                </tabbox>
+            </east>
+        </borderlayout>
+    </window>
+</zk>

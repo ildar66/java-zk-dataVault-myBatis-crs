@@ -1,0 +1,21 @@
+<zk>
+    <window apply="org.zkoss.bind.BindComposer"
+            viewModel="@id('vm') @init('ru.masterdm.crs.web.model.entity.meta.FormMetaViewModel')" validationMessages="@id('vmsgs')"
+            height="100%" contentStyle="overflow:auto;">
+        <?component name="entityMeta" inline="true" macroURI="/components/entity/meta/entity_meta.zul"?>
+        <caption>
+            <label value="${labels.layout_form_meta_list_title}"/>
+            <label zclass="z-icon-angle-right"/>
+            <label value="${labels.form_meta_list_title}" style="cursor:pointer" onClick="@command('navigateFormMetaList')"/>
+            <label zclass="z-icon-angle-right"/>
+            <label value="@bind(vm.add ? labels.add_form_meta_title : labels.edit_form_meta_title)"/>
+            <toolbar>
+                <toolbarbutton onClick="@command('persistEntityMeta')" iconSclass="z-icon-save" label="@init(labels.save_button)"
+                               disabled="@load(not nav.isPermittedForEntityType('INPUT_FORM','EDIT'))"/>
+                <toolbarbutton iconSclass="z-icon-remove" onClick="@command('removeEntityMeta', entityMeta=vm.entityMeta)" visible="@load(not vm.add)"
+                               label="@init(labels.delete_button)" disabled="@load(not nav.isPermittedForEntityType('INPUT_FORM','REMOVE'))"/>
+            </toolbar>
+        </caption>
+        <entityMeta/>
+    </window>
+</zk>

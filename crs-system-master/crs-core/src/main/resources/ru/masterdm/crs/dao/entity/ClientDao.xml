@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ru.masterdm.crs.dao.entity.ClientDao">
+
+    <resultMap id="hubIdWithCcResultMap" type="org.apache.commons.lang3.tuple.MutablePair" autoMapping="true">
+        <id property="left" column="h_id" javaType="long" jdbcType="NUMERIC"/>
+        <result property="value" column="cc" javaType="long" jdbcType="NUMERIC"/>
+    </resultMap>
+
+    <select id="getClientIdsBySearchString" resultMap="hubIdWithCcResultMap">
+        select h_id, cc from (
+            select /*+ result_cache */
+                   id h_id,
+                   rownum nn,
+                   count(1) over () cc
+              from crs_h_client
+             where contains(key, 'SLX:' || #{searchString} || ':SLX | OGRN:' || #{searchString} || ':OGRN | INN:' || #{searchString}
+                            || ':INN | %' || #{searchString} || '%' ) > 0
+        <if test="hubIds != null">
+               and id in
+            <foreach item="hubId" collection="hubIds" separator=", " open=" (" close=")">
+                         ${hubId}
+            </foreach>
+        </if>
+        ) where nn between #{rowRange.startRow} and #{rowRange.endRow}
+    </select>
+
+    <select id="getClientGroupIdsBySearchString" resultMap="hubIdWithCcResultMap">
+        select h_id, cc from (
+            select /*+ result_cache */
+                   id h_id,
+                   rownum nn,
+                   count(1) over () cc
+              from crs_h_client_group
+             where contains(key, 'SLX:' || #{searchString} || ':SLX | %' || #{searchString} || '%' ) > 0
+        <if test="hubIds != null">
+               and id in
+            <foreach item="hubId" collection="hubIds" separator=", " open=" (" close=")">
+                         ${hubId}
+            </foreach>
+        </if>
+        ) where nn between #{rowRange.startRow} and #{rowRange.endRow}
+    </select>
+</mapper>

@@ -1,0 +1,59 @@
+<zk>
+    <window viewModel="@id('vmcalc') @init('ru.masterdm.crs.web.model.entity.EditPermissionsViewModel')"
+            contentStyle="overflow:auto;" height="100%">
+
+        <caption>
+            <label value="${labels.layout_settings_title}"/>
+            <label zclass="z-icon-angle-right"/>
+            <label value="${labels.edit_permissions_title}"/>
+            <toolbar>
+                <toolbarbutton label="${labels.save_button}" onClick="@command('persistPermissions')" iconSclass="z-icon-save"/>
+            </toolbar>
+        </caption>
+
+        <borderlayout sclass="permissions">
+            <west border="none">
+                <listbox vflex="1" width="350px" model="@load(vmcalc.roles)" selectedItem="@bind(vmcalc.selectedRole)" sclass="entities-list">
+                    <custom-attributes org.zkoss.zul.nativebar="false"/>
+                    <listhead>
+                        <listheader label="${labels.key}" hflex="1"/>
+                        <listheader label="${labels.name}" hflex="3"/>
+                    </listhead>
+                    <template name="model">
+                        <listitem onClick="@command('selectRole', role=each)">
+                            <listcell label="${each.name.getDescription(sessionScope.userProfile.locale)}"/>
+                            <listcell label="${each.description.getDescription(sessionScope.userProfile.locale)}"/>
+                        </listitem>
+                    </template>
+                </listbox>
+            </west>
+            <center border="none">
+                <grid vflex="1" hflex="1" sclass="entities-list">
+                    <custom-attributes org.zkoss.zul.nativebar="false"/>
+                    <columns>
+                        <column label="@init(labels.system_objects_label)" hflex="2"/>
+                        <forEach items="@init(vmcalc.businessActions)" var="ba" varStatus="baStatus">
+                            <column hflex="1" label="@init(ba.name.getDescription(sessionScope.userProfile.locale))" sclass="column-actions"/>
+                        </forEach>
+                    </columns>
+                    <rows>
+                        <forEach items="@init(vmcalc.systemObjects)" var="so" varStatus="soStatus">
+                            <row>
+                                <cell>
+                                    <label value="@init(vmcalc.getSystemObjectName(so))"/>
+                                </cell>
+                                <forEach items="@init(vmcalc.businessActions)" var="ba" varStatus="baStatus">
+                                    <cell style="text-align: center">
+                                        <if test="@init(vmcalc.getBusinessActions(so).contains(ba))">
+                                            <checkbox checked="@bind(vmcalc.permissionMap.get(ba).get(so).permit)"/>
+                                        </if>
+                                    </cell>
+                                </forEach>
+                            </row>
+                        </forEach>
+                    </rows>
+                </grid>
+            </center>
+        </borderlayout>
+    </window>
+</zk>

@@ -1,0 +1,63 @@
+buildscript {
+    dependencies {
+        classpath "org.liquibase:liquibase-gradle-plugin:$liquibasePluginVersion"
+        classpath "com.oracle:ojdbc7:$ojdbcVersion"
+        classpath "org.liquibase:liquibase-core:$liquibaseVersion"
+    }
+}
+
+apply plugin: "org.liquibase.gradle"
+
+liquibase {
+    activities {
+        main {
+            changeLogFile "${sourceSets.main.resources.srcDirs[0]}/META-INF/db/crs-changelog.xml"
+            url "$dbUrl"
+            username "$dbUsername"
+            password "$dbPassword"
+        }
+    }
+}
+
+dependencies {
+    compile(
+            "org.springframework:spring-context:$springVersion",
+            "org.springframework:spring-context-support:$springVersion",
+            "org.springframework:spring-jdbc:$springVersion",
+            "org.springframework:spring-aspects:$springVersion",
+            "org.springframework.security:spring-security-core:$springSecurityVersion",
+            "org.springframework.security:spring-security-config:$springSecurityVersion",
+
+            "org.apache.camel:camel-spring:$camelVersion",
+            "org.apache.camel:camel-core:$camelVersion",
+            "org.apache.camel:camel-http:$camelVersion",
+            "org.apache.camel:camel-jackson:$camelVersion",
+            "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion",
+
+            "org.liquibase:liquibase-core:$liquibaseVersion",
+            "org.mybatis:mybatis:$mybatisVersion",
+            "org.mybatis:mybatis-spring:$mybatisSpringVersion",
+            "org.mybatis:mybatis-typehandlers-jsr310:$mybatisTypehandlersJsr310Version",
+            "org.jooq:jooq:$jooqVersion:md",
+
+            "org.slf4j:slf4j-api:$slf4jApiVersion",
+            "org.slf4j:log4j-over-slf4j:$slf4jApiVersion",
+            "ch.qos.logback:logback-classic:$logbackClassicVersion",
+            "log4j:log4j:$log4jVersion",
+            "com.mattbertolini:liquibase-slf4j:$liquibaseSlf4jVersion",
+
+            "org.apache.commons:commons-lang3:$commonsLang3Version",
+            "com.github.ben-manes.caffeine:caffeine:$caffeineVersion",
+            "commons-codec:commons-codec:$commonsCodecVersion",
+            "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion",
+            "org.apache.commons:commons-collections4:$commonsCollections4Version",
+
+            "org.quartz-scheduler:quartz:$quartzVersion",
+            "org.quartz-scheduler:quartz-jobs:$quartzVersion",
+
+            "com.google.code.findbugs:annotations:$findBugsVersion"
+    )
+    compileOnly(
+            "javax.validation:validation-api:$validationApiVersion"
+    )
+}

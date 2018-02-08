@@ -1,0 +1,22 @@
+<zk>
+    <?component name="entityMetaGroup" macroURI="/components/entity/meta/entity_meta_group.zul"?>
+    <window viewModel="@id('vm') @init('ru.masterdm.crs.web.model.entity.meta.EntityMetaGroupViewModel')" validationMessages="@id('vmsgs')"
+            height="100%" contentStyle="overflow:auto;">
+        <caption>
+            <label value="${vm.listTitle}"/>
+            <label zclass="z-icon-angle-right"/>
+            <label value="${vm.metaListTitle}" style="cursor:pointer" onClick="@command('navigateEntityMetaList')"/>
+            <label zclass="z-icon-angle-right"/>
+            <label value="@bind(vm.add ? vm.metaListTitleAdd : vm.metaListTitleEdit)"/>
+            <toolbar>
+                <toolbarbutton onClick="@command('persistEntityMetaGroup')" iconSclass="z-icon-save"
+                               label="@init(labels.save_button)" disabled="@load(not nav.isPermitted('ENTITY','EDIT'))"/>
+                <toolbarbutton iconSclass="z-icon-remove"
+                               onClick="@command('removeEntityMetaGroup')"
+                               visible="@load(vm.canRemove)"
+                               label="@init(labels.delete_button)" disabled="@load(not nav.isPermitted('ENTITY','REMOVE'))"/>
+            </toolbar>
+        </caption>
+        <entityMetaGroup vflex="1"/>
+    </window>
+</zk>

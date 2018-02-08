@@ -1,0 +1,1 @@
+MD.DataAccess.getDictionaryValue(dictionaryKey, dictionaryAttributeKey).data[0];

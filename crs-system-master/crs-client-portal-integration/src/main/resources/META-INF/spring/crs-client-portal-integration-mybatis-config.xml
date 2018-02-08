@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+    <settings>
+        <setting name="aggressiveLazyLoading" value="false"/>
+        <setting name="lazyLoadingEnabled" value="false"/>
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+        <setting name="logImpl" value="SLF4J"/>
+        <setting name="jdbcTypeForNull" value="NULL"/>
+        <setting name="callSettersOnNulls" value="true"/>
+    </settings>
+
+    <typeAliases>
+        <!-- Domain -->
+        <typeAlias type="ru.masterdm.crs.domain.integration.CpiDepartment" />
+        <typeAlias type="ru.masterdm.crs.domain.MultilangDescription"/>
+    </typeAliases>
+
+    <typeHandlers>
+        <typeHandler handler="org.apache.ibatis.type.LocalDateTimeTypeHandler"
+                     javaType="java.time.LocalDateTime"
+                     jdbcType="TIMESTAMP"/>
+    </typeHandlers>
+</configuration>

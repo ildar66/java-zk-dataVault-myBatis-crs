@@ -1,0 +1,16 @@
+<zk>
+    <window viewModel="@id('vmcalc') @init('ru.masterdm.crs.web.model.entity.EditEntitiesViewModel')"
+            contentStyle="overflow:auto;" height="100%">
+
+        <caption>
+            <label value="${labels.layout_entity_list_title}"/>
+            <label zclass="z-icon-angle-right"/>
+            <label value="${labels.entity_list_title}" style="cursor:pointer" onClick="@command('navigateEntityMetaList')"/>
+            <label zclass="z-icon-angle-right"/>
+            <label value="@load(vmcalc.title)"/>
+        </caption>
+
+        <?component name="editEntities" macroURI="/components/entity/edit_entities.zul"?>
+        <editEntities simpleFilter="@ref(false)" showDataSlice="@ref(true)" editable="@ref(true)" editableKey="@ref(true)" showExportImport="@ref(true)" vflex="1"/>
+    </window>
+</zk>

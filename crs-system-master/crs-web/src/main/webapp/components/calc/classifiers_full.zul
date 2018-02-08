@@ -1,0 +1,129 @@
+<grid vflex="1" profilesCount="@ref(vm.calculation.profiles.size())">
+    <custom-attributes org.zkoss.zul.nativebar="false"/>
+    <columns hflex="1">
+        <column label="@init(labels.name)" width="@load(profilesCount eq 2 ? '50%' : '66%')"/>
+        <forEach items="@load(vm.calculation.profiles)" var="profile" varStatus="profileStatus">
+            <column label="@init(profile.attributes[vm.getCalculationProfileAttributeKey('NAME')].getValue(sessionScope.userProfile.locale))"
+                    sclass="align-center"/>
+        </forEach>
+    </columns>
+    <apply template="classifiersTemplate"/>
+    <template name="classifiersTemplate">
+        <rows>
+            <forEach items="@load(vm.entityMetaGroups)" var="entityMetaGroup" varStatus="entityMetaGroupStatus">
+                <group label="@init(entityMetaGroup.name.getDescription(sessionScope.userProfile.locale))"/>
+                <forEach items="@bind(entityMetaGroup.elements)" var="each" varStatus="eachStatus">
+                    <if test="@init(vm.classifierValueMap[each].get('RATED').type.meta.type eq 'REFERENCE')">
+                        <row sclass="classifier">
+                            <hlayout>
+                                <label value="@init(each.name.getDescription(sessionScope.userProfile.locale))"/>
+                                <button autodisable="self" iconSclass="z-icon-question" sclass="button-icon"
+                                        visible="@init(each.comment ne null)"
+                                        tooltiptext="@init(each.comment.getDescription(sessionScope.userProfile.locale))"
+                                        onClick="@command('editText', text=each.comment.getDescription(sessionScope.userProfile.locale),
+                                             isEdit='false', title=labels.comment)"/>
+                            </hlayout>
+                            <forEach items="@init(vm.calculation.profiles)" var="profile" varStatus="profileStatus">
+                                <div classifierValue="@ref(vm.classifierValueMap[each].get(profile.key))">
+                                    <button autodisable="self" iconSclass="z-icon-comment-o" sclass="button-icon button-comment"
+                                            tooltiptext="@init(labels.comment)"
+                                            onClick="@command('editText', commandOnClose='classifierCommentChanged',
+                                                                          text=classifierValue.commentValue,
+                                                                          isEdit=(not (vm.calculation.id eq null or vm.calculation.published)),
+                                                                          rowElement=classifierValue,
+                                                                          title=labels.comment)"/>
+                                    <label value="@load(classifierValue.commentValue)"/>
+                                </div>
+                            </forEach>
+                        </row>
+                        <row sclass="classifier">
+                            <cell colspan="@init(1+vm.calculation.profiles.size())">
+                                <vlayout spacing="0">
+                                    <forEach items="@init(vm.calculation.profiles)" var="profile" varStatus="profileStatus">
+                                        <radiogroup id="@init('radioGroup'.concat(each.key).concat(profile.key))"
+                                                    selectedItem="@load(vm.classifierValueMap[each].get(profile.key).classifierReferenceValue)"
+                                                    onCheck="@command('selectClassifierGroup')"/>
+                                    </forEach>
+                                    <grid model="@init(vm.getReferencedEntities(vm.classifierValueMap[each].get('RATED').type))">
+                                        <columns>
+                                            <column width="@load(profilesCount eq 2 ? '50%' : '66%')"/>
+                                            <forEach items="@init(vm.calculation.profiles)" var="profile" varStatus="profileStatus">
+                                                <column align="center"/>
+                                            </forEach>
+                                        </columns>
+                                        <template name="model" var="radioGroup">
+                                            <row sclass="classifier">
+                                                <label value="@init(vm.getAttributeValue(radioGroup.getAttribute(vm.classifierValueMap[each].get('RATED').type.meta.attributeKey)))"
+                                                       sclass="label-item"/>
+                                                <forEach items="@init(vm.calculation.profiles)" var="profile" varStatus="profileStatus">
+                                                    <div>
+                                                        <space sclass="align-left"/>
+                                                        <radio onClick="@command('selectClassifierReference',entityMeta=each,updateElement=entityMetaGroup,
+                                                        profile=profile.key)"
+                                                               selected="@load(vm.isClassifierSelected(radioGroup, profile, each))"
+                                                               value="@load(radioGroup)"
+                                                               radiogroup="@init('radioGroup'.concat(each.key).concat(profile.key))"
+                                                               disabled="@init(vm.calculation.id eq null or vm.calculation.published)"
+                                                               sclass="align-center"/>
+                                                    </div>
+                                                </forEach>
+                                            </row>
+                                        </template>
+                                    </grid>
+                                </vlayout>
+                            </cell>
+                        </row>
+                    </if>
+                    <if test="@init(vm.classifierValueMap[each].get('RATED').type.meta.type ne 'REFERENCE')">
+                        <row sclass="classifier">
+                            <hlayout>
+                                <label value="@init(each.name.getDescription(sessionScope.userProfile.locale))"/>
+                                <button autodisable="self" iconSclass="z-icon-question" sclass="button-icon"
+                                        visible="@init(each.comment ne null)"
+                                        tooltiptext="@init(each.comment.getDescription(sessionScope.userProfile.locale))"
+                                        onClick="@command('editText', text=each.comment.getDescription(sessionScope.userProfile.locale),
+                                             isEdit='false', title=labels.comment)"/>
+                            </hlayout>
+                            <forEach items="@init(vm.calculation.profiles)" var="profile" varStatus="profileStatus">
+                                <div>
+                                    <space sclass="align-left"/>
+                                    <div sclass="align-center">
+                                        <checkbox checked="@bind(vm.classifierValueMap[each].get(profile.key).classifierValue)"
+                                                  if="${vm.classifierValueMap[each].get(profile.key).type.meta.type eq 'BOOLEAN'}"
+                                                  disabled="@init(vm.calculation.id eq null or vm.calculation.published)"
+                                                  onCheck="@command('changeClassifier', entityMeta=each, profile=profile.key)"/>
+                                        <decimalbox onChange="@command('changeClassifier', entityMeta=each, profile=profile.key)"
+                                                    value="@bind(vm.classifierValueMap[each].get(profile.key).classifierValue)"
+                                                    if="${vm.classifierValueMap[each].get(profile.key).type.meta.type eq 'NUMBER'}"
+                                                    disabled="@init(vm.calculation.id eq null or vm.calculation.published)" width="150px"/>
+
+                                        <datebox format="${labels.date_format}"
+                                                 onChange="@command('changeClassifier', entityMeta=each, profile=profile.key)"
+                                                 value="@bind(vm.classifierValueMap[each].get(profile.key).classifierValue) @converter('ru.masterdm.crs.web.util.converter.DateConverter')"
+                                                 if="${vm.classifierValueMap[each].get(profile.key).type.meta.type eq 'DATE'}"
+                                                 disabled="@init(vm.calculation.id eq null or vm.calculation.published)" width="150px"/>
+
+                                        <datebox format="${labels.date_time_format}"
+                                                 onChange="@command('changeClassifier', entityMeta=each, profile=profile.key)"
+                                                 value="@bind(vm.classifierValueMap[each].get(profile.key).classifierValue) @converter('ru.masterdm.crs.web.util.converter.DateTimeConverter')"
+                                                 if="${vm.classifierValueMap[each].get(profile.key).type.meta.type eq 'DATETIME'}"
+                                                 disabled="@init(vm.calculation.id eq null or vm.calculation.published)" width="150px"/>
+                                    </div>
+                                    <button autodisable="self" iconSclass="z-icon-comment-o" sclass="button-icon button-comment"
+                                            tooltiptext="@init(labels.comment)"
+                                            onClick="@command('editText', commandOnClose='classifierCommentChanged',
+                                                                                  text=vm.classifierValueMap[each].get(profile.key).commentValue,
+                                                                                  isEdit=(not (vm.calculation.id eq null or vm.calculation.published)),
+                                                                                  rowElement=vm.classifierValueMap[each].get(profile.key),
+                                                                                  title=labels.comment)"/>
+                                    <label value="@load(vm.classifierValueMap[each].get(profile.key).commentValue)"/>
+
+                                </div>
+                            </forEach>
+                        </row>
+                    </if>
+                </forEach>
+            </forEach>
+        </rows>
+    </template>
+</grid>

@@ -1,0 +1,57 @@
+{
+  "key": "INPUT_FORM01",
+  "name": {
+    "descriptionRu": "Входная форма 01",
+    "descriptionEn": "Input form 01"
+  },
+  "types": ["INPUT_FORM"],
+  "attributes": [
+    {
+      "key": "INPUT_FORM01#STRING",
+      "name": {
+        "descriptionRu": "Строковый",
+        "descriptionEn": "String"
+      },
+      "type": "STRING",
+      "viewOrder": 0,
+      "multilang": false,
+      "nativeColumn": "IS_STRING"
+    },
+    {
+      "key": "INPUT_FORM01#NUMBER",
+      "name": {
+        "descriptionRu": "Число",
+        "descriptionEn": "Number"
+      },
+      "type": "NUMBER",
+      "viewOrder": 1,
+      "multilang": false,
+      "nativeColumn": "IS_NUMBER"
+    },
+    {
+      "key": "INPUT_FORM01#CALC",
+      "name": {
+        "descriptionRu": "Ссылка на рассчёт",
+        "descriptionEn": "Reference to calculation"
+      },
+      "type": "REFERENCE",
+      "link": true,
+      "entityKey": "CALC",
+      "attributeKey": "CALC#NAME",
+      "viewOrder": 1,
+      "multilang": false
+    },
+    {
+      "key": "INPUT_FORM01#CALC_PROFILE",
+      "name": {
+        "descriptionRu": "Ссылка на профиль",
+        "descriptionEn": "Reference to profile"
+      },
+      "type": "REFERENCE",
+      "link": true,
+      "entityKey": "CALC_PROFILE",
+      "viewOrder": 1,
+      "multilang": false
+    }
+  ]
+}

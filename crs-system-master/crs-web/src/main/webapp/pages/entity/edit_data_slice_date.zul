@@ -1,0 +1,31 @@
+<zk>
+    <window title="${labels.edit_data_slice_date_title} " apply="org.zkoss.bind.BindComposer"
+            viewModel="@id('vm') @init('ru.masterdm.crs.web.model.entity.EditDataSliceDateViewModel')"
+            position="center,center" closable="true" width="40%" action="show: slideDown;hide: slideUp"
+            onCancel="@command('detachWindow')"
+            contentStyle="overflow:auto;">
+        <vlayout>
+            <radiogroup selectedIndex="@bind(vm.selectedIndex)" id="dataSliceDateRadioGroup" onCheck="@command('onCheck')"/>
+            <grid sclass="grid-form">
+                <rows>
+                    <row>
+                        <radio label="@bind(labels.edit_data_slice_date_current)" radiogroup="dataSliceDateRadioGroup"/>
+                        <separator/>
+                    </row>
+                    <row>
+                        <radio label="@bind(labels.edit_data_slice_date_selected)" radiogroup="dataSliceDateRadioGroup"/>
+                        <datebox hflex="1" format="${labels.date_time_format}"
+                                 value="@bind(vm.dataSliceDate) @converter('ru.masterdm.crs.web.util.converter.DateTimeConverter') @save(vm.dataSliceDate, before='saveDataSlice')"
+                                 constraint="@load(vm.dataSliceDateConstraint)" visible="@bind(vm.selectedIndex eq 1)"/>
+                    </row>
+                </rows>
+            </grid>
+            <separator/>
+
+            <hbox width="100%" pack="end">
+                <button onClick="@command('saveDataSlice')" label="${labels.save_button}" tooltiptext="@init(labels.ok_button)"
+                        sclass="button-link"/>
+            </hbox>
+        </vlayout>
+    </window>
+</zk>

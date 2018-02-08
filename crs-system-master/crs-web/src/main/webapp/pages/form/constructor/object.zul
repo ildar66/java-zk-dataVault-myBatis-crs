@@ -1,0 +1,105 @@
+<window id="objectDialog" title="@init(labels.object_window_title)" border="none" width="720px"
+        apply="org.zkoss.bind.BindComposer"
+        viewModel="@id('vm') @init('ru.masterdm.crs.web.model.form.constructor.ObjectViewModel')"
+        position="center,top" closable="true" validationMessages="@id('vmsgs')">
+    <?component name="objectField" inline="true" macroURI="/components/form/object_field.zul"?>
+    <vlayout>
+        <radiogroup id="dynamic"/>
+        <radiogroup id="create"/>
+        <grid sclass="grid-form">
+            <columns>
+                <column hflex="1"/>
+                <column hflex="2"/>
+            </columns>
+            <rows>
+                <row>
+                    <label value="@init(labels.object_name)"/>
+                    <textbox value="@bind(vm.object.name)" hflex="1" id="name_obj"/>
+                </row>
+                <row if="${vm.object.entityMeta.key eq 'CALC'}">
+                    <label value="@init(labels.object_context)"/>
+                    <checkbox checked="@load(vm.object.context)" onCheck="@command('onCheckContext',checked=self.checked)"/>
+                </row>
+                <row visible="@load(vm.template.type.name() ne 'FORM' and vm.object.context eq 'false')">
+                    <label value="@init(labels.object_repeat)"/>
+                    <div>
+                        <radio label="@init(labels.object_repeat_no)" onCheck="@command('setRepeat',repeat='ONE')" radiogroup="dynamic"
+                               checked="@load('ONE' eq vm.object.repeat.name())"
+                               disabled="@load(('DOWN' eq vm.parent.repeat.name())or('RIGHT' eq vm.parent.repeat.name()))"/>
+                        <space/>
+                        <radio label="@init(labels.object_repeat_down)" onCheck="@command('setRepeat',repeat='DOWN')" radiogroup="dynamic"
+                               checked="@load('DOWN' eq vm.object.repeat.name())"/>
+                        <space/>
+                        <radio visible="false" label="@init(labels.object_repeat_right)" onCheck="@command('setRepeat',repeat='RIGHT')"
+                               radiogroup="dynamic"
+                               checked="@load('RIGHT' eq vm.object.repeat.name())"/>
+                    </div>
+                </row>
+                <row visible="@load(vm.template.type.name() eq 'IMPORT'  and vm.object.context eq 'false')">
+                    <label value="@init(labels.object_create)"/>
+                    <div>
+                        <radio label="@init(labels.object_create_no)"
+                               onCheck="@command('setCreate',create='NEVER')"
+                               radiogroup="create" checked="@load('NEVER' eq vm.object.createOption.name())"/>
+                        <space/>
+                        <radio label="@init(labels.object_create_found)"
+                               onCheck="@command('setCreate',create='IF_NOT_EXISTS')"
+                               radiogroup="create" checked="@load('IF_NOT_EXISTS' eq vm.object.createOption.name())"/>
+                        <space/>
+                        <radio label="@init(labels.object_create_always)"
+                               onCheck="@command('setCreate',create='ALWAYS')"
+                               radiogroup="create" checked="@load('ALWAYS' eq vm.object.createOption.name())"/>
+                    </div>
+                </row>
+                <row visible="@load(('ALWAYS' ne vm.object.createOption.name())
+                    and (vm.template.type.name() eq 'IMPORT')  and vm.object.context eq 'false')">
+                    <label value="@init(labels.object_update)"/>
+                    <checkbox checked="@load(vm.object.updateOption)" onCheck="@command('onCheckUpdate',checked=self.checked)"/>
+                </row>
+            </rows>
+        </grid>
+        <separator/>
+        <tree>
+            <custom-attributes org.zkoss.zul.nativebar="false"/>
+            <treecols>
+                <treecol label="@init(labels.object_fieldname)" hflex="6"/>
+                <treecol label="@init(labels.object_key)" hflex="1" align="center"/>
+                <treecol label="@init(('EXCEL' eq vm.template.format.name())?labels.object_excel:labels.object_xml)" hflex="1" align="center"/>
+                <treecol label="@init(labels.object_value)" hflex="5"/>
+                <treecol label="@init(labels.object_write)" hflex="1" if="${vm.template.type.name() ne 'IMPORT'}" align="center"/>
+            </treecols>
+            <treechildren children="@load(vm.object.fields) @template('fields')"/>
+            <template name="fields">
+                <treeitem open="@load(each.object ne null)" onOpen="@command('setFieldChildren', field=each)">
+                    <treerow>
+                        <treecell label="@load(each.attributeMeta.name.getDescription(sessionScope.userProfile.locale))"/>
+                        <treecell>
+                            <checkbox checked="@load(each.key)"
+                                      disabled="@load((vm.object.entityMeta.key eq 'CALC_FORMULA_RESULT' and each.attributeMeta.key ne 'KEY')
+                              or vm.object.context eq 'true' or (vm.object.entityMeta.key ne 'CALC' and each.attributeMeta.entityKey eq 'CALC_PROFILE'))"
+                                      onCheck="@command('onCheckKey',object=each,checked=self.checked)"/>
+                        </treecell>
+                        <treecell>
+                            <checkbox checked="@load(each.mapped)" onCheck="@command('onCheckExcel',object=each,checked=self.checked)"
+                                      disabled="@load(vm.object.entityMeta.key ne 'CALC' and each.attributeMeta.entityKey eq 'CALC_PROFILE')"/>
+                        </treecell>
+                        <treecell>
+                            <objectField if="${each.mapped ne 'true' and each.key}"/>
+                            <label unless="${each.mapped ne 'true' and each.key}" value="@load(each.range.ref) "/>
+                        </treecell>
+                        <treecell if="${vm.template.type.name() ne 'IMPORT'}">
+                            <checkbox checked="@load(each.write)" onCheck="@command('onCheckWrite',object=each,checked=self.checked)"
+                                      visible="@load(each.mapped ne 'true' and each.key eq 'true')"/>
+                        </treecell>
+                    </treerow>
+                    <treechildren children="@load(each.object.fields) @template('fields')" if="${each.attributeMeta.type.name() eq 'REFERENCE'}"/>
+                </treeitem>
+            </template>
+        </tree>
+        <separator/>
+        <hbox width="100%" pack="end">
+            <button id="closeBtn" label="@init(labels.object_save)" onClick="@command('save',cmp=objectDialog)"
+                    disabled="@load(vm.saveDisabled)" sclass="button-link"/>
+        </hbox>
+    </vlayout>
+</window>

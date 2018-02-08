@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+    <settings>
+        <setting name="aggressiveLazyLoading" value="false"/>
+        <setting name="lazyLoadingEnabled" value="false"/>
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+        <setting name="logImpl" value="SLF4J"/>
+        <setting name="jdbcTypeForNull" value="NULL"/>
+        <setting name="callSettersOnNulls" value="true"/>
+    </settings>
+    <typeAliases>
+        <!-- Entity -->
+        <typeAlias type="ru.masterdm.crs.domain.entity.Entity"/>
+        <typeAlias type="ru.masterdm.crs.domain.entity.meta.EntityMeta"/>
+        <typeAlias type="ru.masterdm.crs.domain.entity.meta.EntityType"/>
+        <typeAlias type="ru.masterdm.crs.domain.entity.meta.AttributeMeta"/>
+        <typeAlias type="ru.masterdm.crs.domain.entity.meta.AttributeType"/>
+        <typeAlias type="ru.masterdm.crs.domain.entity.attribute.EntityAttribute"/>
+        <typeAlias type="ru.masterdm.crs.domain.entity.attribute.FileInfoAttribute"/>
+        <typeAlias type="ru.masterdm.crs.domain.entity.attribute.MultilangAttribute"/>
+        <typeAlias type="ru.masterdm.crs.domain.entity.meta.EntityMetaGroup"/>
+
+        <!-- Data Transfer Objects -->
+        <typeAlias type="ru.masterdm.crs.dao.entity.dto.MultilangAttributeDto"/>
+        <typeAlias type="ru.masterdm.crs.dao.entity.dto.MultilangAttributeDtoKey"/>
+        <typeAlias type="ru.masterdm.crs.dao.entity.dto.FileInfoAttributeDto"/>
+        <typeAlias type="ru.masterdm.crs.dao.entity.dto.FileInfoAttributeDtoKey"/>
+        <typeAlias type="ru.masterdm.crs.dao.entity.dto.EntityAttributeDto"/>
+        <typeAlias type="ru.masterdm.crs.dao.entity.dto.EntityAttributeDtoKey"/>
+        <typeAlias type="ru.masterdm.crs.dao.calc.dto.FormulaResultMultiLinkDto"/>
+        <typeAlias type="ru.masterdm.crs.dao.calc.dto.FormulaResultMultiLinkDtoReference"/>
+        <typeAlias type="ru.masterdm.crs.dao.entity.meta.dto.EntityMetaDto" />
+        <typeAlias type="ru.masterdm.crs.dao.entity.meta.dto.EntityAttributeMetaDto" />
+        <typeAlias type="ru.masterdm.crs.dao.entity.meta.dto.AttributeAttributesDto"/>
+        <typeAlias type="ru.masterdm.crs.dao.dto.AuditDto"/>
+
+        <!-- Calculation -->
+        <typeAlias type="ru.masterdm.crs.domain.calc.Formula"/>
+        <typeAlias type="ru.masterdm.crs.domain.calc.FormulaResult"/>
+        <typeAlias type="ru.masterdm.crs.domain.calc.FormulaData"/>
+        <typeAlias type="ru.masterdm.crs.domain.calc.FormulaDependencyPair"/>
+
+        <!-- Dictionary -->
+        <typeAlias type="ru.masterdm.crs.domain.entity.User"/>
+
+        <!-- Domain -->
+        <typeAlias type="ru.masterdm.crs.domain.MultilangDescription"/>
+        <typeAlias type="ru.masterdm.crs.domain.AuditLog"/>
+    </typeAliases>
+    <typeHandlers>
+        <typeHandler handler="org.apache.ibatis.type.LocalDateTimeTypeHandler"
+                     javaType="java.time.LocalDateTime"
+                     jdbcType="TIMESTAMP"/>
+    </typeHandlers>
+</configuration>

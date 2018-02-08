@@ -1,0 +1,51 @@
+<zk>
+    <window apply="org.zkoss.bind.BindComposer"
+            viewModel="@id('vm') @init('ru.masterdm.crs.web.model.audit.AuditLogFilterViewModel')"
+            position="center,top" closable="true" width="60%" action="show: slideDown;hide: slideUp"
+            onCancel="@command('detachWindow')"
+            contentStyle="overflow:auto;">
+        <caption>
+            <button iconSclass="z-icon-plus" autodisable="self" onClick="@command('addAuditLogFilter')" sclass="button-link"
+                    label="@init(labels.add_button)"/>
+        </caption>
+        <vlayout>
+            <grid model="@load(vm.auditLogFilters)">
+                <columns>
+                    <column/>
+                    <column/>
+                    <column width="50px"/>
+                </columns>
+                <template name="model" var="item">
+                    <row>
+                        <combobox model="@load(vm.auditLogFilterList)" readonly="true" hflex="1"
+                                  selectedItem="@bind(item.left)"
+                                  onChange="@command('changeFilterKey', auditLogFilter=item)">
+                            <template name="model">
+                                <comboitem label="@load(vm.getAuditLogFilterName(each))"/>
+                            </template>
+                        </combobox>
+
+                        <textbox value="@bind(item.right) @save(item.right, before='saveAuditLogFilter')" constraint="no empty" hflex="1"
+                                 if="${item.left.toString() == 'AUTHOR' or item.left.toString() == 'OBJECT'}"/>
+                        <combobox model="@load(vm.auditLogActionlist)" readonly="true" hflex="1"
+                                  selectedItem="@bind(item.right)"
+                                  if="${item.left.toString() == 'ACTION'}">
+                            <template name="model">
+                                <comboitem label="@load(vm.getActionName(each))"/>
+                            </template>
+                        </combobox>
+
+                        <button iconSclass="z-icon-minus" sclass="button-icon" autodisable="self"
+                                onClick="@command('removeAuditLogFilter', auditLogFilter=item)"
+                                tooltiptext="@init(labels.delete_button)"/>
+                    </row>
+                </template>
+            </grid>
+            <separator height="27px" />
+            <hbox width="100%" pack="end">
+                <button onClick="@command('saveAuditLogFilter')" label="${labels.save_button}" tooltiptext="@init(labels.save_button)"
+                        sclass="button-link"/>
+            </hbox>
+        </vlayout>
+    </window>
+</zk>

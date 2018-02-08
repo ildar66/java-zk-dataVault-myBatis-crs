@@ -1,0 +1,12 @@
+[ЦРС @projectVersion@] от @currentDate@
+
+Изменения:
+<CHANGES>
+
+Дистрибутив:
+http://releases.masterdm.ru/crs/@projectName@-@projectVersion@.zip
+
+Установка:
+- Остановить crs-ear
+- Обновить crs-ear
+- Запустить crs-ear

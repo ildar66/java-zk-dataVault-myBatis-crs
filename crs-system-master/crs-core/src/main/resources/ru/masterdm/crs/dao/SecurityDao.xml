@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ru.masterdm.crs.dao.SecurityDao">
+
+    <update id="pendingCalcSecureChangeByCalc">
+        update crs_h_calc
+           set virtual_secure_tag = null
+         where id = #{calculation.hubId}
+    </update>
+
+    <update id="pendingCalcSecureChangeByUser">
+        update crs_h_calc
+           set virtual_secure_tag = null
+         where id in (select lcu.calc_id
+                        from crs_l_calc_user lcu
+                       where lcu.user_id = #{user.hubId}
+                       union
+                       select lcc.calc_id
+                         from crs_l_user_department lud join crs_l_client_department lcd on lcd.department_id = lud.department_id
+                                                        join crs_l_calc_client lcc on lcc.client_id = lcd.client_id
+                        where lud.user_id = #{user.hubId})
+    </update>
+
+    <update id="pendingCalcSecureChangeByDepartment">
+        update crs_h_calc
+           set virtual_secure_tag = null
+         where id in (select lcu.calc_id
+                        from crs_l_user_department lud join crs_l_calc_user lcu on lud.user_id = lcu.user_id
+                       where lud.department_id = #{department.hubId}
+                       union
+                       select lcc.calc_id
+                         from crs_l_client_department lcd join crs_l_calc_client lcc on lcd.client_id = lcc.client_id
+                        where lcd.department_id = #{department.hubId})
+    </update>
+
+    <update id="pendingCalcSecureChangeByRole">
+        update crs_h_calc
+           set virtual_secure_tag = null
+         where id in (select lcu.calc_id
+                        from crs_l_user_role lur join crs_l_calc_user lcu on lcu.user_id = lur.user_id
+                       where lur.role_id = #{role.hubId})
+    </update>
+
+    <update id="pendingCalcSecureChangeByClient">
+        update crs_h_calc
+           set virtual_secure_tag = null
+         where id (select lcc.calc_id
+                     from crs_l_calc_client lcc
+                    where lcc.client_id = #{client.hubId})
+    </update>
+
+    <update id="rebuildSecurityTags">
+        begin
+            ctx_ddl.optimize_index(idx_name => 'CRS_H_CALC_I01', optlevel => ctx_ddl.optlevel_full);
+        end;
+    </update>
+</mapper>

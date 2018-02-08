@@ -1,0 +1,183 @@
+<zk>
+    <window border="none" height="100%"
+            contentStyle="overflow:auto"
+            apply="org.zkoss.bind.BindComposer"
+            viewModel="@id('vm') @init('ru.masterdm.crs.web.model.calc.formula.FormulaViewModel')">
+        <?component name="wysiwyg" macroURI="/components/calc/formula/wysiwyg.zul" inline="false"?>
+        <caption>
+            <label value="${labels.layout_calculations_title}"/>
+            <label zclass="z-icon-angle-right"/>
+            <label value="${labels.formula_list_title}" style="cursor:pointer" onClick="@command('navigateFormulas')"/>
+            <label zclass="z-icon-angle-right"/>
+            <label value="${labels.formula_title}"/>
+            <toolbar>
+                <toolbarbutton label="${labels.save_button}" onClick="@command('persistFormula')" iconSclass="z-icon-save"
+                               disabled="@load(vm.formula.sysLibrary or not nav.isPermitted('CALC_FORMULA','EDIT'))"/>
+            </toolbar>
+        </caption>
+        <borderlayout>
+            <center border="none">
+                <borderlayout>
+                    <north border="none" splittable="false">
+                        <vbox>
+                            <grid sclass="grid-form">
+                                <columns>
+                                    <column hflex="1"/>
+                                    <column hflex="4"/>
+                                </columns>
+                                <rows>
+                                    <row>
+                                        <label value="@init(vm.entityMeta.keyAttribute.name.getDescription(sessionScope.userProfile.locale).concat(':'))"/>
+                                        <textbox value="@bind(vm.formula.key) @save(vm.formula.key, before='persistFormula')"
+                                                 width="250px" maxlength="19" constraint="@load(vm.formulaKeyConstraint)"
+                                                 disabled="@load((vm.formula.id==null) ? false : true)"/>
+                                    </row>
+                                    <row>
+                                        ${labels.name_ru}:
+                                        <textbox
+                                                value="@bind(vm.formula.name.descriptionRu) @save(vm.formula.name.descriptionRu, before='persistFormula')"
+                                                width="95%" maxlength="@load(nav.stringMaxLength)" constraint="no empty"
+                                                disabled="@load(vm.formula.sysLibrary)"/>
+                                    </row>
+                                    <row>
+                                        ${labels.name_en}:
+                                        <textbox
+                                                value="@bind(vm.formula.name.descriptionEn) @save(vm.formula.name.descriptionEn, before='persistFormula')"
+                                                width="95%" maxlength="@load(nav.stringMaxLength)" constraint="no empty"
+                                                disabled="@load(vm.formula.sysLibrary)"/>
+                                    </row>
+                                    <row>
+                                        ${labels.comment_ru}:
+                                        <textbox
+                                                value="@bind(vm.formula.comment.descriptionRu) @save(vm.formula.comment.descriptionRu, before='persistFormula')"
+                                                width="95%" maxlength="@load(nav.stringMaxLength)" disabled="@load(vm.formula.sysLibrary)"/>
+                                    </row>
+                                    <row>
+                                        ${labels.comment_en}:
+                                        <textbox
+                                                value="@bind(vm.formula.comment.descriptionEn) @save(vm.formula.comment.descriptionEn, before='persistFormula')"
+                                                width="95%" maxlength="@load(nav.stringMaxLength)" disabled="@load(vm.formula.sysLibrary)"/>
+                                    </row>
+                                    <row>
+                                        ${labels.formula_type}:
+                                        <div>
+                                            <combobox model="@load(vm.formulaTypes.keySet())"
+                                                      selectedItem="@bind(vm.formula.type) @save(vm.formula.type, before='persistFormula')"
+                                                      if="${not vm.edit}" constraint="@load(not vm.edit ? 'no empty' : '')"
+                                                      onSelect="@command('refreshFormula')">
+                                                <template name="model">
+                                                    <comboitem label="@load(vm.formulaTypes[each])"/>
+                                                </template>
+                                            </combobox>
+                                            <label value="@load(labels[vm.formula.type.name()])" visible="@init(vm.edit)"/>
+                                        </div>
+                                    </row>
+                                    <row visible="@load(not vm.formula.library)">
+                                        ${labels.formula_result_type}:
+                                        <combobox model="@load(vm.resultTypeList)" disabled="@load(vm.formula.sysLibrary)"
+                                                  selectedItem="@bind(vm.formula.resultType) @save(vm.formula.resultType, before='persistFormula')"
+                                                  readonly="true" constraint="@load(not vm.formula.library ? 'no empty' : '')">
+                                            <template name="model">
+                                                <comboitem label="@load(vm.getResultTypeLabel(each))" value="@load(each)"/>
+                                            </template>
+                                        </combobox>
+                                    </row>
+                                </rows>
+                            </grid>
+                            <separator/>
+                        </vbox>
+                    </north>
+                    <center border="none" vflex="true">
+                        <tabbox height="100%">
+                            <tabs>
+                                <tab label="${labels.formula_formula}"/>
+                                <tab label="${labels.formula_variables}"/>
+                                <tab label="${labels.formula_debugging}"/>
+                            </tabs>
+                            <tabpanels>
+                                <tabpanel>
+                                    <wysiwyg vflex="1" style="overflow: auto;" id="ww" width="100%" value="@ref(vm.formula.formula.data)"/>
+                                </tabpanel>
+                                <tabpanel>
+                                    <borderlayout droppable="formula" onDrop="@command('dropVariable')">
+                                        <center flex="true" border="none">
+                                            <vbox vflex="1" hflex="1"
+                                                  visible="@load(!vm.formula.isLibrary() || vm.isFormulaChildrenNonLibraryExist())">
+                                                <grid model="@load(vm.formula.children)"
+                                                      width="100%" vflex="1">
+                                                    <custom-attributes org.zkoss.zul.nativebar="false"/>
+                                                    <columns>
+                                                        <column width="20%" label="${labels.formula_variable}"/>
+                                                        <column label="${labels.formula_field_title}"/>
+                                                        <column width="50px"/>
+                                                    </columns>
+                                                    <template name="model">
+                                                        <row visible="@bind(!each.right.isLibrary())">
+                                                            <textbox value="@bind(each.left)" onChange="@command('checkVariable', variable=each)"
+                                                                     maxlength="100" width="96%"/>
+                                                            <label value="@load(each.right.key)"/>
+                                                            <button iconSclass="z-icon-minus" autodisable="self"
+                                                                    onClick="@command('removeVariable', variable=each.right)"
+                                                                    tooltiptext="@init(labels.delete_button)" sclass="button-icon"/>
+                                                        </row>
+                                                    </template>
+                                                </grid>
+                                                <separator/>
+                                            </vbox>
+                                        </center>
+                                        <south border="none">
+                                            <chosenbox model="@load(vm.childLibraryModel)" onSelect="@command('removeLibrary')"
+                                                       vflex="1" hflex="1">
+                                                <template name="model" var="lib">
+                                                    <label value="@bind(lib.key)"/>
+                                                </template>
+                                            </chosenbox>
+                                        </south>
+                                    </borderlayout>
+                                </tabpanel>
+                                <tabpanel>
+                                    ${labels.formula_in_development}
+                                </tabpanel>
+                            </tabpanels>
+                        </tabbox>
+                    </center>
+                </borderlayout>
+            </center>
+            <east width="30%" border="none" splittable="false">
+                <tabbox width="100%" height="100%" mold="accordion">
+                    <tabs>
+                        <tab label="${labels.formula_calculated_formulas}"/>
+                    </tabs>
+                    <tabpanels>
+                        <tabpanel viewModel="@id('ftree') @init('ru.masterdm.crs.web.model.calc.formula.FormulaListViewModel',
+                                                                filterKey='_EDIT', library=vm.formula.library)">
+                            <hbox sizedByContent="true">
+                                <button onClick="@command('editCalculationsFilter')" label="@init(labels.filter_button)"
+                                        iconSclass="z-icon-filter" autodisable="self" sclass="button-link"/>
+                                <chosenbox onClick="@command('editCalculationsFilter')" onSelect="@command('deleteCalculationsFilter')"
+                                           model="@bind(ftree.entityFilters)"/>
+                            </hbox>
+                            <separator/>
+                            <tree vflex="1" id="formulaTree" model="@bind(ftree.treeModel)">
+                                <custom-attributes org.zkoss.zul.nativebar="false"/>
+                                <treecols sizable="true">
+                                    <treecol label="${ftree.entityMeta.keyAttribute.name.getDescription(sessionScope.userProfile.locale)}"/>
+                                    <treecol label="${labels.name}"/>
+                                </treecols>
+                                <template name="model" var="fm">
+                                    <treeitem>
+                                        <treerow draggable="@bind('formula')">
+                                            <treecell label="@bind(fm.key)"/>
+                                            <treecell label="@bind(fm.name.getDescription(sessionScope.userProfile.locale))"/>
+                                        </treerow>
+                                    </treeitem>
+                                </template>
+                            </tree>
+                        </tabpanel>
+                    </tabpanels>
+                </tabbox>
+            </east>
+        </borderlayout>
+
+    </window>
+</zk>

@@ -1,0 +1,128 @@
+<zk>
+    <if test="@init(innerEach.type eq 'BOOLEAN')">
+        <checkbox
+                checked="@load(innerItem.entity.getAttribute(innerEach.key).value) @save(innerItem.entity.getAttribute(innerEach.key).value, before='confirm')"/>
+    </if>
+    <if test="@init(innerEach.type eq 'STRING')">
+        <if test="@init(innerEach.nullable and not innerEach.multilang)">
+            <textbox
+                    value="@load(innerItem.entity.getAttribute(innerEach.key).value) @save(innerItem.entity.getAttribute(innerEach.key).value, before='confirm')"
+                    hflex="1"
+                    tooltiptext="@load(innerItem.entity.getAttribute(innerEach.key).value)" maxlength="@load(vm.stringMaxLength)"/>
+        </if>
+        <if test="@init(not innerEach.nullable and not innerEach.multilang)">
+            <textbox
+                    value="@load(innerItem.entity.getAttribute(innerEach.key).value) @save(innerItem.entity.getAttribute(innerEach.key).value, before='confirm')"
+                    hflex="1"
+                    tooltiptext="@load(innerItem.entity.getAttribute(innerEach.key).value)" constraint="no empty"
+                    maxlength="@load(vm.stringMaxLength)"/>
+        </if>
+        <if test="@init(innerEach.nullable and innerEach.multilang and sessionScope.userProfile.locale.name() eq 'RU')">
+            <textbox
+                    value="@load(innerItem.entity.getAttribute(innerEach.key).getValue(sessionScope.userProfile.locale)) @save(innerItem.entity.getAttribute(innerEach.key).valueRu, before='confirm')"
+                    hflex="1"
+                    tooltiptext="@load(innerItem.entity.getAttribute(innerEach.key).getValue(sessionScope.userProfile.locale))"
+                    maxlength="@load(vm.stringMaxLength)"/>
+        </if>
+        <if test="@init(innerEach.nullable and innerEach.multilang and sessionScope.userProfile.locale.name() ne 'RU')">
+            <textbox
+                    value="@load(innerItem.entity.getAttribute(innerEach.key).getValue(sessionScope.userProfile.locale)) @save(innerItem.entity.getAttribute(innerEach.key).valueEn, before='confirm')"
+                    hflex="1"
+                    tooltiptext="@load(innerItem.entity.getAttribute(innerEach.key).getValue(sessionScope.userProfile.locale))"
+                    maxlength="@load(vm.stringMaxLength)"/>
+        </if>
+        <if test="@init(not innerEach.nullable and innerEach.multilang and sessionScope.userProfile.locale.name() eq 'RU')">
+            <textbox
+                    value="@load(innerItem.entity.getAttribute(innerEach.key).getValue(sessionScope.userProfile.locale)) @save(innerItem.entity.getAttribute(innerEach.key).valueRu, before='confirm')"
+                    hflex="1"
+                    tooltiptext="@load(innerItem.entity.getAttribute(innerEach.key).getValue(sessionScope.userProfile.locale))"
+                    constraint="no empty" maxlength="@load(vm.stringMaxLength)"/>
+        </if>
+        <if test="@init(not innerEach.nullable and innerEach.multilang and sessionScope.userProfile.locale.name() ne 'RU')">
+            <textbox
+                    value="@load(innerItem.entity.getAttribute(innerEach.key).getValue(sessionScope.userProfile.locale)) @save(innerItem.entity.getAttribute(innerEach.key).valueEn, before='confirm')"
+                    hflex="1"
+                    tooltiptext="@load(innerItem.entity.getAttribute(innerEach.key).getValue(sessionScope.userProfile.locale))"
+                    constraint="no empty" maxlength="@load(vm.stringMaxLength)"/>
+        </if>
+    </if>
+    <if test="@init(innerEach.type eq 'TEXT')">
+        <hbox hflex="1">
+            <button disabled="true" autodisable="self" iconSclass="z-icon-asterisk"
+                    tooltiptext="@init(labels.edit_button)" sclass="button-icon"
+                    onClick="@command('editEntityText', entityStatus=innerItem, attributeMetaKey=innerEach.key, isEdit=false)"/>
+            <if test="@init(innerEach.nullable and not innerEach.multilang)">
+                <textbox
+                        value="@load(innerItem.entity.getAttribute(innerEach.key).value) @save(innerItem.entity.getAttribute(innerEach.key).value, before='confirm')"
+                        hflex="1" maxlength="@load(vm.stringMaxLength)"
+                        tooltiptext="@load(innerItem.entity.getAttribute(innerEach.key).value)"/>
+            </if>
+            <if test="@init(not innerEach.nullable and not innerEach.multilang)">
+                <textbox
+                        value="@load(innerItem.entity.getAttribute(innerEach.key).value) @save(innerItem.entity.getAttribute(innerEach.key).value, before='confirm')"
+                        hflex="1" maxlength="@load(vm.stringMaxLength)"
+                        tooltiptext="@load(innerItem.entity.getAttribute(innerEach.key).value)" constraint="no empty"/>
+            </if>
+            <if test="@init(innerEach.nullable and innerEach.multilang and sessionScope.userProfile.locale.name() eq 'RU')">
+                <textbox
+                        value="@load(innerItem.entity.getAttribute(innerEach.key).getValue(sessionScope.userProfile.locale)) @save(innerItem.entity.getAttribute(innerEach.key).valueRu, before='confirm')"
+                        hflex="1" maxlength="@load(vm.stringMaxLength)"
+                        tooltiptext="@load(innerItem.entity.getAttribute(innerEach.key).getValue(sessionScope.userProfile.locale))"/>
+            </if>
+            <if test="@init(innerEach.nullable and innerEach.multilang and sessionScope.userProfile.locale.name() ne 'RU')">
+                <textbox
+                        value="@load(innerItem.entity.getAttribute(innerEach.key).getValue(sessionScope.userProfile.locale)) @save(innerItem.entity.getAttribute(innerEach.key).valueEn, before='confirm')"
+                        hflex="1" maxlength="@load(vm.stringMaxLength)"
+                        tooltiptext="@load(innerItem.entity.getAttribute(innerEach.key).getValue(sessionScope.userProfile.locale))"/>
+            </if>
+            <if test="@init(not innerEach.nullable and innerEach.multilang and sessionScope.userProfile.locale.name() eq 'RU')">
+                <textbox
+                        value="@load(innerItem.entity.getAttribute(innerEach.key).getValue(sessionScope.userProfile.locale)) @save(innerItem.entity.getAttribute(innerEach.key).valueRu, before='confirm')"
+                        hflex="1" maxlength="@load(vm.stringMaxLength)"
+                        tooltiptext="@load(innerItem.entity.getAttribute(innerEach.key).getValue(sessionScope.userProfile.locale))"
+                        constraint="no empty"/>
+            </if>
+            <if test="@init(not innerEach.nullable and innerEach.multilang and sessionScope.userProfile.locale.name() ne 'RU')">
+                <textbox
+                        value="@load(innerItem.entity.getAttribute(innerEach.key).getValue(sessionScope.userProfile.locale)) @save(innerItem.entity.getAttribute(innerEach.key).valueEn, before='confirm')"
+                        hflex="1" maxlength="@load(vm.stringMaxLength)"
+                        tooltiptext="@load(innerItem.entity.getAttribute(innerEach.key).getValue(sessionScope.userProfile.locale))"
+                        constraint="no empty"/>
+            </if>
+        </hbox>
+    </if>
+    <if test="@init(innerEach.type eq 'NUMBER')">
+        <if test="@init(innerEach.nullable)">
+            <decimalbox hflex="1"
+                        value="@load(innerItem.entity.getAttribute(innerEach.key).value) @save(innerItem.entity.getAttribute(innerEach.key).value, before='confirm')"/>
+        </if>
+        <if test="@init(not innerEach.nullable)">
+            <decimalbox hflex="1"
+                        value="@load(innerItem.entity.getAttribute(innerEach.key).value) @save(innerItem.entity.getAttribute(innerEach.key).value, before='confirm')"
+                        constraint="no empty"/>
+        </if>
+    </if>
+    <if test="@init(innerEach.type eq 'DATE')">
+        <if test="@init(innerEach.nullable)">
+            <datebox hflex="1" format="${labels.date_format}"
+                     value="@load(innerItem.entity.getAttribute(innerEach.key).value) @save(innerItem.entity.getAttribute(innerEach.key).value, before='confirm') @converter('ru.masterdm.crs.web.util.converter.DateConverter')"/>
+        </if>
+        <if test="@init(not innerEach.nullable)">
+            <datebox hflex="1" format="${labels.date_format}"
+                     value="@load(innerItem.entity.getAttribute(innerEach.key).value) @save(innerItem.entity.getAttribute(innerEach.key).value, before='confirm') @converter('ru.masterdm.crs.web.util.converter.DateConverter') @save(innerItem.entity.getAttribute(innerEach.key).value, before='confirm')"
+                     constraint="no empty"/>
+        </if>
+    </if>
+    <if test="@init(innerEach.type eq 'DATETIME')">
+        <if test="@init(innerEach.nullable)">
+            <datebox hflex="1" format="${labels.date_time_format}"
+                     value="@load(innerItem.entity.getAttribute(innerEach.key).value) @save(innerItem.entity.getAttribute(innerEach.key).value, before='confirm') @converter('ru.masterdm.crs.web.util.converter.DateTimeConverter')"/>
+
+        </if>
+        <if test="@init(not innerEach.nullable)">
+            <datebox hflex="1" format="${labels.date_time_format}"
+                     value="@load(innerItem.entity.getAttribute(innerEach.key).value) @save(innerItem.entity.getAttribute(innerEach.key).value, before='confirm') @converter('ru.masterdm.crs.web.util.converter.DateTimeConverter') @save(innerItem.entity.getAttribute(innerEach.key).value, before='confirm')"
+                     constraint="no empty"/>
+        </if>
+    </if>
+</zk>

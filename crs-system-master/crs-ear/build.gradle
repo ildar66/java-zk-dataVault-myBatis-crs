@@ -1,0 +1,24 @@
+apply plugin: 'ear'
+
+configurations.earlib {
+    it.exclude group: 'commons-logging', module: 'commons-logging'
+    it.exclude group: 'javax.servlet', module: 'servlet-api'
+    it.exclude group: 'org.slf4j', module: 'slf4j-jdk14'
+}
+
+dependencies {
+    deploy project(path: ':crs-web', configuration: 'archives')
+    deploy project(path: ':crs-integration-web', configuration: 'archives')
+}
+
+def webModuleArchive = String.format("%s-%s.war", project(":crs-web").name, project(":crs-web").version)
+def integrationWebModuleArchive = String.format("%s-%s.war", project(":crs-integration-web").name, project(":crs-integration-web").version)
+
+ear {
+    appDirName 'src/main/application'
+    deploymentDescriptor {
+        version = "5"
+        webModule(webModuleArchive, "/crs-web")
+        webModule(integrationWebModuleArchive, "/crs-integration-web")
+    }
+}

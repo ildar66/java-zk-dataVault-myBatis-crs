@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <import resource="classpath:META-INF/spring/crs-overall-config.xml" />
+    <import resource="crs-security-web-config.xml" />
+
+    <bean id="crsLiquibase" class="liquibase.integration.spring.SpringLiquibase">
+        <property name="dataSource" ref="crsDataSource" />
+        <property name="changeLog" value="classpath*:META-INF/db/crs-changelog.xml" />
+    </bean>
+
+    <bean id="pages" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+        <property name="location" value="classpath:pages.properties" />
+        <property name="fileEncoding" value="UTF-8" />
+    </bean>
+
+    <bean id="webConfig" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+        <property name="location" value="classpath:web-config.properties" />
+        <property name="fileEncoding" value="UTF-8" />
+    </bean>
+</beans>

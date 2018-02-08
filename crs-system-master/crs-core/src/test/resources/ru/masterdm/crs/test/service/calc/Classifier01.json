@@ -1,0 +1,91 @@
+{
+  "key": "CLASSIFIER01",
+  "name": {
+    "descriptionRu": "Классификатор 01",
+    "descriptionEn": "Classifier 01"
+  },
+  "types": ["CLASSIFIER"],
+  "attributes": [
+    {
+      "key": "CLASSIFIER01#CLASSIFIER_TYPE",
+      "name": {
+        "descriptionRu": "Тип классификатора",
+        "descriptionEn": "Classifier type"
+      },
+      "type": "NUMBER",
+      "viewOrder": 0,
+      "multilang": false,
+      "nativeColumn": "CLASSIFIER_TYPE"
+    },
+    {
+      "key": "CLASSIFIER01#CLASSIFIER_COMMENT",
+      "name": {
+        "descriptionRu": "Комментарий классификатора",
+        "descriptionEn": "Classifier comment"
+      },
+      "type": "TEXT",
+      "viewOrder": 0,
+      "multilang": false,
+      "nativeColumn": "CLASSIFIER_COMMENT"
+    },
+    {
+      "key": "CLASSIFIER01#STRING",
+      "name": {
+        "descriptionRu": "Строковый",
+        "descriptionEn": "String"
+      },
+      "type": "STRING",
+      "viewOrder": 0,
+      "multilang": false,
+      "nativeColumn": "IS_STRING"
+    },
+    {
+      "key": "CLASSIFIER01#NUMBER",
+      "name": {
+        "descriptionRu": "Число",
+        "descriptionEn": "Number"
+      },
+      "type": "NUMBER",
+      "viewOrder": 1,
+      "multilang": false,
+      "nativeColumn": "IS_NUMBER"
+    },
+    {
+      "key": "CLASSIFIER01#DATETIME",
+      "name": {
+        "descriptionRu": "ДатаВремя",
+        "descriptionEn": "dateTime"
+      },
+      "type": "DATETIME",
+      "viewOrder": 1,
+      "multilang": false,
+      "nativeColumn": "IS_DATETIME"
+    },
+    {
+      "key": "CLASSIFIER01#CALC",
+      "name": {
+        "descriptionRu": "Ссылка на рассчёт",
+        "descriptionEn": "Reference to calculation"
+      },
+      "type": "REFERENCE",
+      "link": true,
+      "entityKey": "CALC",
+      "attributeKey": "CALC#NAME",
+      "viewOrder": 1,
+      "multilang": false
+    },
+    {
+      "key": "CLASSIFIER01#CALC_PROFILE",
+      "name": {
+        "descriptionRu": "Ссылка на профиль",
+        "descriptionEn": "Reference to profile"
+      },
+      "type": "REFERENCE",
+      "link": true,
+      "entityKey": "CALC_PROFILE",
+      "attributeKey": "CALC_PROFILE#NAME",
+      "viewOrder": 1,
+      "multilang": false
+    }
+  ]
+}

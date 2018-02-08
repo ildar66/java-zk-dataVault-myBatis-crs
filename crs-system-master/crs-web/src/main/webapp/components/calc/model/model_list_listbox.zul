@@ -1,0 +1,25 @@
+<zk>
+    <listbox selectedItems="@bind(vm.selected)" model="@bind(model)" vflex="1"
+             multiple="true" checkmark="true" sclass="entities-list">
+        <custom-attributes org.zkoss.zul.nativebar="false"/>
+        <listhead sizable="true" sclass="sizable">
+            <listheader width="30px"/>
+            <listheader label="@init(vm.entityMeta.keyAttribute.name.getDescription(sessionScope.userProfile.locale))"/>
+            <listheader label="@init(vm.getAttributeLabel('NAME_'.concat(sessionScope.userProfile.locale.name())))"/>
+            <listheader label="@init(vm.getAttributeLabel('VERSION'))"/>
+            <listheader label="@init(vm.getAttributeLabel('ACTUALITY'))"/>
+        </listhead>
+        <template name="model">
+            <listitem onClick="@command('editModel', model=each)">
+                <listcell onClick="@command('')"
+                          iconSclass="@load(vm.selected.contains(each) ? 'z-icon-check-square-o' : 'z-icon-square-o')"
+                          sclass="@load(vm.selected.contains(each) ? 'entity-checked' : 'entity-unchecked')"/>
+                <listcell label="@init(each.key)"/>
+                <listcell label="@init(each.name.getDescription(sessionScope.userProfile.locale))"/>
+                <listcell label="@init(each.version)"/>
+                <listcell label="@init(each.actuality) @converter('ru.masterdm.crs.web.util.converter.DateTimeFormatConverter')"/>
+            </listitem>
+        </template>
+    </listbox>
+    <paging pageSize="@load(vm.pageSize)" totalSize="@load(totalSize)" activePage="@save(activePage)" detailed="@bind(totalSize ne 0)"/>
+</zk>

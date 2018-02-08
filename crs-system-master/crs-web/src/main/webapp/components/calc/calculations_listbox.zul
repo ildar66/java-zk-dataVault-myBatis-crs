@@ -1,0 +1,73 @@
+<zk>
+    <listbox selectedItems="@bind(vmcalcs.selected)" model="@bind(model)" vflex="1" multiple="true"
+             sclass="entities-list" checkmark="true">
+        <custom-attributes org.zkoss.zul.nativebar="false"/>
+        <listhead sizable="true" sclass="sizable">
+            <listheader width="30px"/>
+            <listheader label="@init(vmcalcs.entityMeta.keyAttribute.name.getDescription(sessionScope.userProfile.locale))" hflex="min"/>
+            <listheader visible="@init(showPublishedColumn)" hflex="min" align="center"/>
+            <listheader label="@init(labels.calculations_client)" visible="@init(vmcalcs.entity eq null or vmcalcs.entity.meta.key eq 'USER')"/>
+            <listheader label="@init(vmcalcs.getAttributeLabel('MODEL'))"/>
+            <listheader label="@init(vmcalcs.getAttributeLabel('NAME'))"/>
+            <forEach items="@init(vmcalcs.profiles)" var="profile" varStatus="profileStatus">
+                <listheader
+                        label="@init(profile.attributes[vmcalcs.getCalculationProfileAttributeKey('NAME')].getValue(sessionScope.userProfile.locale))"/>
+            </forEach>
+            <listheader label="@init(vmcalcs.getAttributeLabel('ACTUALITY'))" hflex="min"/>
+            <listheader label="@init(vmcalcs.getAttributeLabel('DATA_ACTUALITY'))" hflex="min"/>
+            <listheader label="@init(labels.calculations_ldts)" hflex="min"/>
+            <listheader label="@init(vmcalcs.getAttributeLabel('AUTHOR'))"/>
+            <listheader label="@init(labels.calculations_role)"/>
+        </listhead>
+        <template name="model">
+            <listitem onClick="@command('editCalculation', calculation=each)">
+                <listcell onClick="@command('selectCalculation')"
+                          iconSclass="@load(vmcalcs.selected.contains(each) ? 'z-icon-check-square-o' : 'z-icon-square-o')"
+                          sclass="@load(vmcalcs.selected.contains(each) ? 'entity-checked' : 'entity-unchecked')"/>
+                <listcell label="@init(each.key)"/>
+                <listcell iconSclass="@init(each.published ? 'z-icon-check' : '')"/>
+                <listcell visible="@init(vmcalcs.entity eq null or vmcalcs.entity.meta.key eq 'USER')">
+                    <if test="@init(not empty each.clientGroup)">
+                        <a onClick="@command('navigateClientGroup', clientGroup=each.clientGroup)"
+                           sclass="common_link result-client">
+                            <label value="@init(each.clientGroup.attributes[nav.getClientGroupAttributeMeta('NAME').key].getValue(sessionScope.userProfile.locale))"/>
+                        </a>
+                    </if>
+                    <if test="@init(empty each.clientGroup and not empty each.client)">
+                        <a onClick="@command('navigateClient', client=each.client)"
+                           sclass="common_link result-client">
+                            <label value="@init(each.client.attributes[nav.getClientAttributeMeta('NAME').key].getValue(sessionScope.userProfile.locale))"/>
+                        </a>
+                    </if>
+                </listcell>
+                <listcell label="@init(each.model.name.getDescription(sessionScope.userProfile.locale))"/>
+                <listcell label="@init(each.name)"/>
+                <forEach items="@init(vmcalcs.profiles)" var="profile" varStatus="profileStatus">
+                    <listcell>
+                        <vlayout if="${profileStatus.index lt each.profiles.size()}">
+                            <forEach items="@init(vmcalcs.getMasterFormulas(each))" var="masterFormula" varStatus="masterFormulaStatus">
+                                <hlayout>
+                                    <label value="@init(masterFormula.name.getDescription(sessionScope.userProfile.locale).concat(': ')
+                                    .concat(masterFormula.getFormulaResult(each, profile).getResult(masterFormula)))"/>
+                                </hlayout>
+                            </forEach>
+                        </vlayout>
+                    </listcell>
+                </forEach>
+                <listcell label="@init(each.actuality) @converter('ru.masterdm.crs.web.util.converter.DateFormatConverter')"/>
+                <listcell label="@init(each.dataActuality) @converter('ru.masterdm.crs.web.util.converter.DateTimeFormatConverter')"/>
+                <listcell label="@init(each.ldts) @converter('ru.masterdm.crs.web.util.converter.DateTimeFormatConverter')"/>
+                <listcell label="@init(each.author.fullName)"/>
+                <listcell>
+                    <forEach items="@init(each.author.roles)" var="role" varStatus="roleStatus">
+                        <label value="@init(role.name.getDescription(sessionScope.userProfile.locale).concat(
+                                        roleStatus.index lt each.author.roles.size()-1 ? '; ' : ''))"
+                               if="${roleStatus.index lt 2}"/>
+                        <label value="..." if="${roleStatus.index eq 2}"/>
+                    </forEach>
+                </listcell>
+            </listitem>
+        </template>
+    </listbox>
+    <paging pageSize="@load(vmcalcs.pageSize)" totalSize="@load(totalSize)" activePage="@save(activePage)" detailed="@bind(totalSize ne 0)"/>
+</zk>

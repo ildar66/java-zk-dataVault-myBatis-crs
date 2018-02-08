@@ -1,0 +1,82 @@
+<zk>
+    <div apply="org.zkoss.bind.BindComposer"
+         viewModel="@id('vmf') @init('ru.masterdm.crs.web.model.form.constructor.ObjectFieldViewModel', field=each)">
+        <div if="${vmf.field.attributeMeta.type.name() eq 'REFERENCE'}">
+            <combobox onChanging="@command('refreshClientsModel')"
+                      selectedItem="@load(vmf.getSelectedItem(vmf.clientsModel, vmf.field.value))"
+                      model="@load(vmf.clientsModel)" onSelect="@command('selectItem',field=vmf.field, val=self.selectedItem.value)"
+                      hflex="1" if="${vmf.field.attributeMeta.entityKey eq 'CLIENT'}"
+                      disabled="@load(vmf.field.mapped)" autodrop="true" buttonVisible="false">
+                <template name="model" var="entity">
+                    <comboitem
+                            label="@load(entity.getAttribute(vmf.field.attributeMeta.attributeKey).getValue(sessionScope.userProfile.locale))"
+                            value="@load(entity.key)"/>
+                </template>
+            </combobox>
+            <combobox onChanging="@command('refreshClientGroupsModel')"
+                      selectedItem="@load(vmf.getSelectedItem(vmf.clientGroupsModel, vmf.field.value))"
+                      model="@load(vmf.clientGroupsModel)" onSelect="@command('selectItem',field=vmf.field, val=self.selectedItem.value)"
+                      hflex="1" if="${vmf.field.attributeMeta.entityKey eq 'CLIENT_GROUP'}"
+                      disabled="@load(vmf.field.mapped)" autodrop="true" buttonVisible="false">
+                <template name="model" var="entity">
+                    <comboitem
+                            label="@load(entity.getAttribute(vmf.field.attributeMeta.attributeKey).getValue(sessionScope.userProfile.locale))"
+                            value="@load(entity.key)"/>
+                </template>
+            </combobox>
+            <combobox onSelect="@command('selectItem',field=vmf.field, val=self.selectedItem.value)" hflex="1"
+                      selectedItem="@load(vmf.getSelectedItem(vmf.getComboModel(vmf.field), vmf.field.value))"
+                      model="@load(vmf.getComboModel(vmf.field))"
+                      if="${vmf.field.attributeMeta.entityKey eq 'CALC_MODEL'}"
+                      disabled="@load(vmf.field.mapped)" autodrop="true">
+                <template name="model" var="entity">
+                    <comboitem label="@load(entity.name.getDescription(sessionScope.userProfile.locale))"
+                               value="@load(entity.key)"/>
+                </template>
+            </combobox>
+            <combobox onSelect="@command('selectItem',field=vmf.field, val=self.selectedItem.value)" hflex="1"
+                      selectedItem="@load(vmf.getSelectedItem(vmf.getComboModel(vmf.field), vmf.field.value))"
+                      model="@load(vmf.getComboModel(vmf.field))"
+                      unless="${vmf.field.attributeMeta.entityKey eq 'CLIENT' or vmf.field.attributeMeta.entityKey eq 'CLIENT_GROUP'
+                                      or vmf.field.attributeMeta.entityKey eq 'CALC_MODEL'}"
+                      disabled="@load(vmf.field.mapped)" autodrop="true">
+                <template name="model" var="entity">
+                    <comboitem label="@load(entity.getAttribute(vmf.field.attributeMeta.attributeKey).meta.multilang
+                                    ? entity.getAttribute(vmf.field.attributeMeta.attributeKey).getValue(sessionScope.userProfile.locale)
+                                    : entity.getAttribute(vmf.field.attributeMeta.attributeKey).value)" value="@load(entity.key)"/>
+                </template>
+            </combobox>
+        </div>
+
+        <datebox value="@bind(vmf.field.value) @converter('ru.masterdm.crs.web.util.converter.DateConverter')"
+                 hflex="1" format="${labels.date_time_format}"
+                 if="${vmf.field.attributeMeta.type.name() eq 'DATETIME'}"
+                 disabled="@load(vmf.field.mapped)"/>
+        <vlayout if="${vmf.field.attributeMeta.type.name() eq 'DATE'}">
+            <combobox readonly="true" model="@load(vmf.dateTypes)" hflex="1" selectedItem="@bind(vmf.field.formDateType)"
+                      if="${vmf.field.mappingObject.entityMeta.type.name() eq 'INPUT_FORM'}">
+                <template name="model" var="dateType">
+                    <comboitem label="@load(vmf.getDateTypeDescription(dateType))"/>
+                </template>
+            </combobox>
+            <hlayout visible="@load(vmf.field.formDateType.name() eq 'OFFSET')">
+                <textbox hflex="1" value="@bind(vmf.field.dateOffset)"/>
+                <separator hflex="1"/>
+                <combobox readonly="true" model="@load(vmf.offsetTypes)" hflex="2" selectedItem="@bind(vmf.field.dateOffsetType)">
+                    <template name="model" var="dateOffsetType">
+                        <comboitem label="@load(vmf.getOffsetTypeDescription(dateOffsetType))"/>
+                    </template>
+                </combobox>
+            </hlayout>
+            <datebox value="@bind(vmf.field.value) @converter('ru.masterdm.crs.web.util.converter.DateConverter')"
+                     hflex="1" format="${labels.date_format}"
+                     disabled="@load(vmf.field.mapped)"
+                     visible="@load(vmf.field.mappingObject.entityMeta.type.name() ne 'INPUT_FORM' or vmf.field.formDateType.name() eq 'CUSTOM')"/>
+        </vlayout>
+
+        <textbox value="@bind(vmf.field.value)" hflex="1"
+                 unless="${(vmf.field.attributeMeta.type.name() eq 'REFERENCE') or (vmf.field.attributeMeta.type.name() eq 'DATETIME')
+                                 or vmf.field.attributeMeta.type.name() eq 'DATE'}"
+                 disabled="@load(vmf.field.mapped)"/>
+    </div>
+</zk>

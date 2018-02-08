@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/tx
+                           http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+    <bean id="crsDataSource" class="oracle.jdbc.pool.OracleDataSource">
+        <property name="URL" value="#{systemProperties['dbUrl']}"/>
+        <property name="user" value="#{systemProperties['dbUsername']}"/>
+        <property name="password" value="#{systemProperties['dbPassword']}"/>
+    </bean>
+
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="crsDataSource" />
+    </bean>
+    <tx:annotation-driven transaction-manager="transactionManager" />
+
+    <bean id="crsSqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="crsDataSource" />
+        <property name="configLocation" value="classpath:META-INF/spring/crs-mybatis-config.xml" />
+        <property name="typeAliasesPackage" value="ru.masterdm.crs.domain" />
+        <property name="mapperLocations" value="classpath:ru/masterdm/crs/dao/**/*.xml" />
+    </bean>
+
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="ru.masterdm.crs.dao" />
+        <property name="sqlSessionFactoryBeanName" value="crsSqlSessionFactory" />
+    </bean>
+
+    <bean id="crsSqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+        <constructor-arg index="0" ref="crsSqlSessionFactory" />
+    </bean>
+</beans>

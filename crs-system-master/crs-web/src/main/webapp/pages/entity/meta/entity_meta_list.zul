@@ -1,0 +1,14 @@
+<zk>
+    <?component name="entityMetaList" macroURI="/components/entity/meta/entity_meta_list.zul"?>
+
+    <window apply="org.zkoss.bind.BindComposer"
+            viewModel="@id('vm') @init('ru.masterdm.crs.web.model.entity.meta.EntityMetaListViewModel')"
+            contentStyle="overflow:auto;" height="100%">
+        <caption>
+            <label value="${labels.layout_entity_list_title}"/>
+            <label zclass="z-icon-angle-right"/>
+            <label value="${labels.entity_meta_list_title}"/>
+        </caption>
+        <entityMetaList vflex="1"/>
+    </window>
+</zk>

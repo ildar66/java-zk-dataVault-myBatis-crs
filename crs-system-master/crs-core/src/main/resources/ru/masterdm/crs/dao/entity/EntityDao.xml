@@ -1,0 +1,894 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ru.masterdm.crs.dao.entity.EntityDao">
+
+    <resultMap id="entityResultMap" type="map" autoMapping="true">
+        <id property="ID" column="id" javaType="long" />
+        <result property="H_ID" column="h_id" javaType="long" />
+        <result property="LDTS" column="ldts" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+        <result property="HUB_LDTS" column="hub_ldts" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+        <result property="REMOVED" column="removed" javaType="boolean" jdbcType="NUMERIC" />
+        <result property="$cc" column="$cc" javaType="long" />
+    </resultMap>
+
+
+    <resultMap id="multilangAttributeResultMap" type="multilangAttribute" autoMapping="true">
+        <id property="linkId" column="link_id" />
+        <result property="linkLdts" column="link_ldts" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+        <result property="satelliteLdts" column="satellite_ldts" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+    </resultMap>
+    <resultMap id="multilangAttributeDtoKeyResultMap" type="multilangAttributeDtoKey">
+        <!-- only single value may be retrieved per (parent_hub_id, attribute_meta_key) -->
+        <id property="attributeMetaKey" column="attribute_meta_key" />
+        <result property="textEn" column="text_en" javaType="string" jdbcType="CLOB" />
+        <result property="textRu" column="text_ru" javaType="string" jdbcType="CLOB" />
+        <association property="multilangAttribute" resultMap="multilangAttributeResultMap" />
+    </resultMap>
+    <resultMap id="multilangAttributeBulkResultMap" type="multilangAttributeDto" autoMapping="true">
+        <id property="mainHubId" column="main_hub_id" />
+        <collection property="keys" resultMap="multilangAttributeDtoKeyResultMap" >
+        </collection>
+    </resultMap>
+
+
+    <resultMap id="fileInfoAttributeResultMap" type="fileInfoAttribute" autoMapping="true">
+        <id property="linkId" column="link_id" />
+        <result property="linkLdts" column="link_ldts" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+        <result property="satelliteLdts" column="satellite_ldts" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+    </resultMap>
+    <resultMap id="fileInfoAttributeDtoKeyResultMap" type="fileInfoAttributeDtoKey">
+        <!-- only single value may be retrieved per (parent_hub_id, attribute_meta_key) -->
+        <id property="attributeMetaKey" column="attribute_meta_key" />
+        <association property="fileInfoAttribute" resultMap="fileInfoAttributeResultMap" />
+    </resultMap>
+    <resultMap id="fileInfoAttributeBulkResultMap" type="fileInfoAttributeDto" autoMapping="true">
+        <id property="mainHubId" column="main_hub_id" />
+        <collection property="keys" resultMap="fileInfoAttributeDtoKeyResultMap" />
+    </resultMap>
+
+
+    <resultMap id="entityAttributeResultMap" type="entityAttribute" autoMapping="true">
+        <id property="linkId" column="link_id" />
+        <result property="linkLdts" column="link_ldts" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+    </resultMap>
+    <resultMap id="entityAttributeDtoKeyResultMap" type="entityAttributeDtoKey">
+        <!-- multiples relation may be retrieved per (parent_hub_id, attribute_meta_key) -->
+        <id property="linkId" column="link_id" />
+        <id property="attributeMetaKey" column="attribute_meta_key" />
+        <id property="ts" column="ts" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+        <association property="entityAttribute" resultMap="entityAttributeResultMap" />
+    </resultMap>
+    <resultMap id="entityAttributeBulkResultMap" type="entityAttributeDto" autoMapping="true">
+        <id property="mainHubId" column="main_hub_id" />
+        <collection property="keys" ofType="entityAttributeDtoKey" resultMap="entityAttributeDtoKeyResultMap" />
+    </resultMap>
+
+    <resultMap id="attributeAttributeResultMap" type="map" autoMapping="true">
+        <id property="ID" column="id" javaType="long" />
+        <result property="LINK_ID" column="link_id" javaType="long" />
+        <result property="LDTS" column="ldts" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+        <result property="REMOVED" column="removed" javaType="boolean" jdbcType="NUMERIC" />
+    </resultMap>
+
+    <resultMap id="blobResultMap" type="java.util.HashMap">
+        <result property="content" column="content" javaType="_byte[]" jdbcType="BLOB" />
+    </resultMap>
+
+    <select id="getEntityIdByKey" resultType="long">
+        select id
+          from ${hubTableName}
+         where key = upper(trim(#{key}))
+    </select>
+
+    <select id="selectEntity" resultMap="entityResultMap">
+        <bind name="intableAttr" value="entityMeta.inTableAttribute" />
+        <if test="rowRange != null">
+        select *
+          from (
+        </if>
+                select
+        <if test="rowRange != null or (criteria != null and criteria.resultCache)">
+                       /*+
+        <if test="rowRange != null">
+                       first_rows(${rowRange.endRow})
+        </if>
+        <if test="criteria != null and criteria.resultCache">
+                       result_cache
+        </if>
+                       */
+        </if>
+                       e.*,
+        <if test="rowRange != null">
+                       count(1) over () "$cc", <!-- kind of "analytical count" -->
+        </if>
+        <choose>
+            <when test="criteria != null and criteria.orderDefined">
+                       row_number() over (order by ${criteria.order.text}) "$nn"
+            </when>
+            <otherwise>
+                       rownum "$nn"
+            </otherwise>
+        </choose>
+                  from (select eh.key,
+                               es.h_id,
+                               eh.ldts hub_ldts,
+                                               es.id,
+                                               es.ldts,
+                                               es.removed,
+                                               es.digest
+                <foreach item="attr" collection="intableAttr" open="," separator=",">
+                                               es."${attr.nativeColumn}"
+                </foreach>
+                                               , row_number() over (partition by es.h_id
+        <if test="criteria != null and criteria.addPartitionDefined">
+            <foreach collection="criteria.addPartition" item="addAttribute" open=",">
+                                                                         es."${addAttribute.nativeColumn}"
+            </foreach>
+        </if>
+                                                                         order by es.ldts desc) rn$
+                          from ${hubTableName} eh join ${satelliteTableName} es on eh.id = es.h_id
+                                                                               and es.ldts &lt;= #{ldts}
+        <if test="criteria != null and criteria.hubIdsAndLdts != null">
+            <foreach collection="criteria.hubIdsAndLdts" item="hubLdts" index="hubId" open=" join (select * from table(crs_pair_nts_a(crs_pair_nts("
+                     separator="),crs_pair_nts(" close=")))) t on t.n = es.h_id and es.ldts &lt;= t.ts">
+                               #{hubId}, #{hubLdts}
+            </foreach>
+        </if>
+        <if test="criteria != null and criteria.referencedEntities != null">
+            <foreach collection="criteria.referencedEntities" item="refEntity" index="rfi">
+                <bind name="name" value="referencedEntitiesNames[refEntity]" />
+                and exists (select 1
+                              from (select main_hub_id, linked_hub_id
+                                      from (select l.${name.linkParentHubIdColumnName} main_hub_id,
+                                           l.${name.linkChildHubIdColumnName} linked_hub_id,
+                                           l.removed,
+                                           row_number() over(partition by l.${name.linkParentHubIdColumnName}, l.${name.linkChildHubIdColumnName} order by l.ldts desc) rn$
+                                      from ${name.attributeMeta.linkTable} l
+                                     where l.ldts &lt;= #{ldts}) l
+                             where l.rn$ = 1
+                               and l.removed = 0) l
+                             where l.main_hub_id = es.h_id
+                               and l.linked_hub_id = #{refEntity.hubId})
+            </foreach>
+        </if>
+        where 1 = 1
+            <if test="criteria != null and criteria.hubIds != null">
+                <foreach item="id" collection="criteria.hubIds" open=" and (es.h_id, 1) in (" separator="," close=")">
+                               (#{id}, 1)
+                </foreach>
+            </if>
+            <if test="criteria != null and criteria.user != null">
+                                and contains(eh.virtual_secure_tag, 'HASPATH(/U) and ${criteria.user.hubId} WITHIN U', 1) > 0
+            </if>
+            <if test="criteria != null and !criteria.strictLatestActualRecord and criteria.where != null">
+                <if test="criteria.whereDefined or criteria.where.hasMultilangWhere or criteria.where.hasReferenceWhere">
+                and (
+                    <if test="criteria.whereDefined">
+                           ${criteria.where.text}
+                    </if>
+                    <if test="criteria.where.hasMultilangWhere">
+                        <foreach collection="multilangNames" item="name" index="mlw">
+                            <bind name="refWhere" value="criteria.where.multilangWheres[name.attributeMeta]" />
+                            <choose>
+                                <when test="!(mlw == 0 and !criteria.whereDefined)">
+                                    ${refWhere.content[0].conjunction.meaning}
+                                </when>
+                                <otherwise>
+                                    <if test="refWhere.content[0].conjunction.name().equals('AND_NOT') or refWhere.content[0].conjunction.name().equals('OR_NOT')">
+                                        not
+                                    </if>
+                                </otherwise>
+                            </choose>
+                               exists (select 1
+                                         from (select l.*
+                                                 from (select l.${name.linkParentHubIdColumnName} main_hub_id,
+                                                              l.localization_id linked_hub_id,
+                                                              l.removed,
+                                                              row_number() over(partition by l.${name.linkParentHubIdColumnName}, l.localization_id order by l.ldts desc) rn$
+                                                         from ${name.attributeMeta.linkTable} l
+                                                        where l.ldts &lt;= #{ldts}) l
+                                                where l.rn$ = 1
+                                                  and l.removed = 0) l join (select c.*
+                                                                               from (select s.*,
+                                                                                            row_number() over (partition by s.h_id order by s.ldts desc) rn$
+                                                                                       from crs_sys_s_localization s
+                                                                                      where s.ldts &lt;= #{ldts}) c
+                                                                              where c.rn$ = 1
+                                                                                and c.removed = 0) c on l.linked_hub_id = c.h_id
+                                        where l.main_hub_id = es.h_id
+                                          and (
+                            <foreach collection="refWhere.content" item="whereItem" index="wi">
+                                <if test="wi != 0">
+                                        ${whereItem.conjunction.meaning}
+                                </if>
+                                <choose>
+                                    <when test="whereItem.operator.name() == 'IS_NULL' or whereItem.operator.name() == 'IS_NOT_NULL'">
+                                        (c.text_ru ${whereItem.operator.meaning} or c.text_en ${whereItem.operator.meaning})
+                                    </when>
+                                    <when test="whereItem.searchAttribute.type.name() == 'TEXT' and whereItem.operator.name() == 'LIKE'">
+                                        (
+                                        dbms_lob.instr(upper(c.text_ru), trim('%' from upper(#{whereItem.value}))) != 0
+                                        or dbms_lob.instr(upper(c.text_en), trim('%' from upper(#{whereItem.value}))) != 0
+                                        )
+                                    </when>
+                                    <when test="whereItem.searchAttribute.type.name() == 'TEXT' and whereItem.operator.name() != 'LIKE'">
+                                              (
+                                              upper(dbms_lob.substr(c.text_ru, 4000, 1)) ${whereItem.operator.meaning} upper(#{whereItem.value})
+                                           or upper(dbms_lob.substr(c.text_en, 4000, 1)) ${whereItem.operator.meaning} upper(#{whereItem.value})
+                                              )
+                                    </when>
+                                    <otherwise>
+                                              (
+                                              upper(c.string_ru) ${whereItem.operator.meaning} upper(#{whereItem.value})
+                                           or upper(c.string_en) ${whereItem.operator.meaning} upper(#{whereItem.value})
+                                              )
+                                    </otherwise>
+                                </choose>
+                            </foreach>  )
+                                      )
+                        </foreach>
+                    </if>
+                    <if test="criteria.where.hasReferenceWhere">
+                        <foreach collection="referenceNames" item="name" index="rfi">
+                            <bind name="refWhere" value="criteria.where.referenceWheres[name.attributeMeta]" />
+                            <choose>
+                               <when test="!(rfi == 0 and (!criteria.whereDefined and !criteria.where.hasMultilangWhere))">
+                                   ${refWhere.conjunction.meaning}
+                               </when>
+                               <otherwise>
+                                   <if test="refWhere.conjunction.name().equals('AND_NOT') or refWhere.conjunction.name().equals('OR_NOT')">
+                                       not
+                                   </if>
+                               </otherwise>
+                            </choose>
+                               exists (select 1
+                                         from (select main_hub_id, linked_hub_id
+                                                 from (select l.${name.linkParentHubIdColumnName} main_hub_id,
+                                                      l.${name.linkChildHubIdColumnName} linked_hub_id,
+                                                      l.removed,
+                                                      row_number() over(partition by l.${name.linkParentHubIdColumnName}, l.${name.linkChildHubIdColumnName} order by l.ldts desc) rn$
+                                                 from ${name.attributeMeta.linkTable} l
+                                                where l.ldts &lt;= #{ldts}) l
+                                        where l.rn$ = 1
+                                          and l.removed = 0) l join (select c.*
+                                                                       from (select h.key, s.*,
+                                                                                    row_number() over (partition by s.h_id order by s.ldts desc) rn$
+                                                                               from ${name.referencedSatelliteTableName} s join ${name.referencedHubTableName} h on h.id = s.h_id and s.ldts &lt;= #{ldts}) c
+                                                                              where c.rn$ = 1
+                                                                                and c.removed = 0) c on l.linked_hub_id = c.h_id
+                                        where l.main_hub_id = es.h_id
+                            <if test="refWhere.defined">
+                                          and (${refWhere.text})
+                            </if>
+                                      )
+                        </foreach>
+                    </if>
+                )
+                </if>
+            </if>
+            ) e
+                 where e.rn$ = 1
+                   and e.removed = 0
+        <if test="criteria != null and criteria.strictLatestActualRecord and criteria.where != null">
+            <if test="criteria.whereDefined or criteria.where.hasMultilangWhere or criteria.where.hasReferenceWhere">
+            and (
+                <if test="criteria.whereDefined">
+                       ${criteria.where.text}
+                </if>
+                <if test="criteria.where.hasMultilangWhere">
+                    <foreach collection="multilangNames" item="name" index="mlw">
+                        <bind name="refWhere" value="criteria.where.multilangWheres[name.attributeMeta]" />
+                        <choose>
+                            <when test="!(mlw == 0 and !criteria.whereDefined)">
+                                ${refWhere.content[0].conjunction.meaning}
+                            </when>
+                            <otherwise>
+                                <if test="refWhere.content[0].conjunction.name().equals('AND_NOT') or refWhere.content[0].conjunction.name().equals('OR_NOT')">
+                                    not
+                                </if>
+                            </otherwise>
+                         </choose>
+                           exists (select 1
+                                     from (select main_hub_id, linked_hub_id
+                                             from (select l.${name.linkParentHubIdColumnName} main_hub_id,
+                                                          l.localization_id linked_hub_id,
+                                                          l.removed,
+                                                          row_number() over(partition by l.${name.linkParentHubIdColumnName}, l.localization_id order by l.ldts desc) rn$
+                                                     from ${name.attributeMeta.linkTable} l
+                                                    where l.ldts &lt;= #{ldts}) l
+                                            where l.rn$ = 1
+                                              and l.removed = 0) l join (select c.*
+                                                                           from (select s.*,
+                                                                                        row_number() over (partition by s.h_id order by s.ldts desc) rn$
+                                                                                   from crs_sys_s_localization s
+                                                                                  where s.ldts &lt;= #{ldts}) c
+                                                                          where c.rn$ = 1
+                                                                            and c.removed = 0) c on l.linked_hub_id = c.h_id
+                                    where l.main_hub_id = e.h_id
+                                      and (
+                        <foreach collection="refWhere.content" item="whereItem" index="wi">
+                            <if test="wi != 0">
+                                    ${whereItem.conjunction.meaning}
+                            </if>
+                            <choose>
+                                <when test="whereItem.operator.name() == 'IS_NULL' or whereItem.operator.name() == 'IS_NOT_NULL'">
+                                    (c.text_ru ${whereItem.operator.meaning} or c.text_en ${whereItem.operator.meaning}
+                                    )
+                                </when>
+                                <when test="whereItem.searchAttribute.type.name() == 'TEXT' and whereItem.operator.name() == 'LIKE'">
+                                    (
+                                    dbms_lob.instr(upper(c.text_ru), trim('%' from upper(#{whereItem.value}))) != 0
+                                    or dbms_lob.instr(upper(c.text_en), trim('%' from upper(#{whereItem.value}))) != 0
+                                    )
+                                </when>
+                                <when test="whereItem.searchAttribute.type.name() == 'TEXT' and whereItem.operator.name() != 'LIKE'">
+                                          (
+                                          upper(dbms_lob.substr(c.text_ru, 4000, 1)) ${whereItem.operator.meaning} upper(#{whereItem.value})
+                                       or upper(dbms_lob.substr(c.text_en, 4000, 1)) ${whereItem.operator.meaning} upper(#{whereItem.value})
+                                          )
+                                </when>
+                                <otherwise>
+                                          (
+                                          upper(c.string_ru) ${whereItem.operator.meaning} upper(#{whereItem.value})
+                                       or upper(c.string_en) ${whereItem.operator.meaning} upper(#{whereItem.value})
+                                          )
+                                </otherwise>
+                            </choose>
+                        </foreach>  )
+                                  )
+                    </foreach>
+                </if>
+                <if test="criteria.where.hasReferenceWhere">
+                    <foreach collection="referenceNames" item="name" index="rfi">
+                        <bind name="refWhere" value="criteria.where.referenceWheres[name.attributeMeta]" />
+                        <choose>
+                           <when test="!(rfi == 0 and (!criteria.whereDefined and !criteria.where.hasMultilangWhere))">
+                               ${refWhere.conjunction.meaning}
+                           </when>
+                           <otherwise>
+                               <if test="refWhere.conjunction.name().equals('AND_NOT') or refWhere.conjunction.name().equals('OR_NOT')">
+                                   not
+                               </if>
+                           </otherwise>
+                        </choose>
+                           exists (select 1
+                                     from (select main_hub_id, linked_hub_id
+                                             from (select l.${name.linkParentHubIdColumnName} main_hub_id,
+                                                          l.${name.linkChildHubIdColumnName} linked_hub_id,
+                                                          l.removed,
+                                                          row_number() over(partition by l.${name.linkParentHubIdColumnName}, l.${name.linkChildHubIdColumnName} order by l.ldts desc) rn$
+                                                     from ${name.attributeMeta.linkTable} l
+                                                    where l.ldts &lt;= #{ldts}) l
+                                            where l.rn$ = 1
+                                              and l.removed = 0) l join(select c.*
+                                                                          from (select h.key, s.*,
+                                                                                       row_number() over (partition by s.h_id order by s.ldts desc) rn$
+                                                                                  from ${name.referencedHubTableName} h join ${name.referencedSatelliteTableName} s on h.id = s.h_id and s.ldts &lt;= #{ldts}) c
+                                                                         where c.rn$ = 1
+                                                                           and c.removed = 0) c on l.linked_hub_id = c.h_id
+                                    where l.main_hub_id = e.h_id
+                        <if test="refWhere.defined">
+                                      and (${refWhere.text})
+                        </if>
+                                  )
+                    </foreach>
+                </if>
+                )
+            </if>
+        </if>
+        <if test="criteria != null and criteria.orderDefined">
+                 order by ${criteria.order.text}
+        </if>
+        <if test="rowRange != null">
+               )
+         where "$nn" between #{rowRange.startRow} and #{rowRange.endRow}
+        </if>
+    </select>
+
+    <insert id="insertEntityHub" statementType="CALLABLE">
+        begin
+            insert into ${hubTableName} (id, key, ldts)
+            values (${hubSequenceName}.nextval, nvl(upper(trim(#{entity.key})), ${hubSequenceName}.currval), #{entity.ldts})
+            returning id, key into #{entity.hubId, javaType=long, jdbcType=INTEGER, mode=OUT},
+                                   #{entity.key, javaType=string, jdbcType=VARCHAR, mode=OUT};
+        end;
+    </insert>
+
+    <insert id="insertEntitySatellite" statementType="CALLABLE">
+        <bind name="intableAttributeMeta" value="entity.meta.inTableAttribute" />
+        begin
+            insert into ${satelliteTableName} (id, h_id, ldts, removed, digest
+        <foreach collection="intableAttributeMeta" item="attributeMeta" open="," separator=",">
+                                               "${attributeMeta.nativeColumn}"
+        </foreach>
+            )
+            values (${satelliteSequenceName}.nextval, #{entity.hubId}, #{entity.ldts}, #{entity.removed}, #{entity.digest}
+        <foreach collection="intableAttributeMeta" item="attributeMeta" open="," separator=",">
+            <bind name="typeName" value="attributeMeta.type.name()" />
+            <bind name="attribute" value="entity.getAttribute(attributeMeta.key)"/><!-- just to init attribute if it not exists -->
+            <choose>
+                <when test="typeName == 'BOOLEAN'">
+                    #{entity.attributes[${attributeMeta.key}].value, javaType=boolean, jdbcType=NUMERIC}
+                </when>
+                <when test="typeName == 'STRING'">
+                    trim(#{entity.attributes[${attributeMeta.key}].value, javaType=string, jdbcType=VARCHAR})
+                </when>
+                <when test="typeName == 'TEXT'">
+                    #{entity.attributes[${attributeMeta.key}].value, javaType=string, jdbcType=CLOB}
+                </when>
+                <when test="typeName == 'NUMBER'">
+                    #{entity.attributes[${attributeMeta.key}].value, javaType=java.math.BigDecimal, jdbcType=NUMERIC}
+                </when>
+                <when test="typeName == 'DATE'">
+                    #{entity.attributes[${attributeMeta.key}].value, javaType=java.time.LocalDate, jdbcType=DATE}
+                </when>
+                <when test="typeName == 'DATETIME'">
+                    #{entity.attributes[${attributeMeta.key}].value, javaType=java.time.LocalDateTime, jdbcType=DATE}
+                </when>
+                <otherwise>
+                    #{entity.attributes[${attributeMeta.key}].value} /*undeftype*/
+                </otherwise>
+            </choose>
+        </foreach>
+            )
+            returning id into #{entity.id, javaType=long, jdbcType=NUMERIC, mode=OUT};
+        end;
+    </insert>
+
+    <insert id="insertRemoveEntity" statementType="CALLABLE">
+        <bind name="intableAttributeMeta" value="entity.meta.inTableAttribute" />
+        declare
+            v_id number := ${dsqlName.satelliteTableName}_seq.nextval;
+        begin
+            insert into ${dsqlName.satelliteTableName} (id, h_id, ldts, removed, digest
+            <foreach collection="intableAttributeMeta" item="attributeMeta" open="," separator=",">
+                                                        "${attributeMeta.nativeColumn}"
+            </foreach>
+                                                       )
+            select v_id, #{entity.hubId}, #{ldts}, 1, digest
+            <foreach collection="intableAttributeMeta" item="attributeMeta" open="," separator=",">
+                   "${attributeMeta.nativeColumn}"
+            </foreach>
+              from (
+                    select h_id, ldts, removed, digest
+            <foreach collection="intableAttributeMeta" item="attributeMeta" open="," separator=",">
+                           "${attributeMeta.nativeColumn}"
+            </foreach>
+                           , row_number() over (partition by es.h_id order by es.ldts desc) "$rn"
+                      from ${dsqlName.satelliteTableName} es
+                     where es.h_id = #{entity.hubId}
+                       and es.ldts &lt;= #{ldts}
+                   ) e
+             where e."$rn" = 1;
+          #{entity.id, javaType=long, jdbcType=NUMERIC, mode=OUT} := v_id;
+        end;
+    </insert>
+
+    <select id="selectEntityAttributeBulk" resultMap="entityAttributeBulkResultMap">
+        <foreach collection="dsqlNames" item="name" separator=" union all ">
+        select el.*, '${name.attributeMeta.key}' attribute_meta_key
+          from (select el.id link_id,
+                       ldts link_ldts,
+                       el.${name.linkParentHubIdColumnName} main_hub_id,
+                       el.${name.linkChildHubIdColumnName} linked_hub_id,
+                       el.removed,
+                       row_number() over (partition by el.${name.linkParentHubIdColumnName}, el.${name.linkChildHubIdColumnName}
+            <if test="useEntityLdts">
+                                                     , t.ts
+            </if>
+                                              order by el.ldts desc) rn$
+            <if test="useEntityLdts">
+                       , t.ts
+            </if>
+            <if test="!useEntityLdts">
+                       , null ts
+            </if>
+                  from ${name.attributeMeta.linkTable} el
+            <if test="not useEntityLdts">
+                 where (el.${name.linkParentHubIdColumnName}, 1) in
+                <foreach item="entity" collection="entities" open="(" separator="," close=")">
+                                                                    (#{entity.hubId}, 1)
+                </foreach>
+                   and el.ldts &lt;= #{ldts}
+            </if>
+            <if test="useEntityLdts">
+                join (select * from table(crs_pair_nts_a(crs_pair_nts(
+                <foreach collection="entities" item="entity" separator="),crs_pair_nts(">
+                                                                      #{entity.hubId}, #{entity.ldts}
+                </foreach>
+                      )))) t on t.n = el.${name.linkParentHubIdColumnName} and el.ldts &lt;= t.ts
+            </if>
+            <if test="name.referenceEntity">
+                   and exists (select 1
+                                 from (select re.h_id, re.removed, row_number() over (partition by re.h_id order by re.ldts desc) rn$
+                                         from ${name.referencedSatelliteTableName} re
+                                        where re.ldts &lt;= #{ldts}) re
+                                where re.rn$ = 1
+                                  and re.removed = 0
+                                  and re.h_id = el.${name.linkChildHubIdColumnName})
+            </if>
+               ) el
+         where el.rn$ = 1
+           and el.removed = 0
+        </foreach>
+    </select>
+
+    <!-- LINK TABLE operations -->
+    <select id="selectAttributeAttributes" resultMap="attributeAttributeResultMap">
+        select * from (
+            select ls.id,
+                   ls.link_id,
+                   ls.ldts,
+                   ls.removed,
+                   ls.digest
+        <foreach collection="dsqlNames.attributeMeta.attributeAttributes" item="attributeMeta" open="," separator=",">
+                   ls."${attributeMeta.nativeColumn}"
+        </foreach>
+                   , row_number() over(partition by ls.link_id order by ls.ldts desc) rn$
+              from ${dsqlNames.linkSatelliteTableName} ls
+        <if test="linkIds != null">
+             where ldts &lt;= #{ldts}
+               and (ls.link_id, 1) in
+            <foreach collection="linkIds" item="linkId" open="(" separator="," close=")">
+                                      (#{linkId}, 1)
+            </foreach>
+        </if>
+        <if test="linkIdsAndLdts != null">
+            <foreach collection="linkIdsAndLdts" item="ldts" index="linkId" open=" join (select * from table(crs_pair_nts_a(crs_pair_nts("
+                     separator="),crs_pair_nts(" close=")))) t on t.n = ls.link_id and ldts &lt;= t.ts">
+                               #{linkId}, #{ldts}
+            </foreach>
+        </if>
+        ) where removed = 0 and rn$ = 1
+    </select>
+
+    <insert id="insertAttributeSatellite" statementType="CALLABLE">
+        <bind name="attrAttr" value="entityAttribute.satellite.attributes" />
+        begin
+            insert into ${dsqlNames.linkSatelliteTableName} (id, link_id, ldts, removed, digest
+            <foreach collection="attrAttr" item="attr" open="," separator=",">
+                "${attr.meta.nativeColumn}"
+            </foreach>
+            )
+            values (${dsqlNames.linkSatelliteSequenceName}.nextval, #{entityAttribute.linkId}, #{entityAttribute.satellite.ldts},
+                    #{entityAttribute.satellite.removed}, #{entityAttribute.satellite.digest}
+            <foreach collection="attrAttr" item="attr" open="," separator=",">
+                <bind name="typeName" value="attr.meta.type.name()"/>
+                <choose>
+                    <when test="typeName == 'BOOLEAN'">
+                        #{attr.value, javaType=boolean, jdbcType=NUMERIC}
+                    </when>
+                    <when test="typeName == 'STRING'">
+                        trim(#{attr.value, javaType=string, jdbcType=VARCHAR})
+                    </when>
+                    <when test="typeName == 'TEXT'">
+                        #{attr.value, javaType=string, jdbcType=CLOB}
+                    </when>
+                    <when test="typeName == 'NUMBER'">
+                        #{attr.value, javaType=java.math.BigDecimal, jdbcType=NUMERIC}
+                    </when>
+                    <when test="typeName == 'DATE'">
+                        #{attr.value, javaType=java.time.LocalDate, jdbcType=DATE}
+                    </when>
+                    <when test="typeName == 'DATETIME'">
+                        #{attr.value, javaType=java.time.LocalDateTime, jdbcType=DATE}
+                    </when>
+                    <otherwise>
+                        #{attr.value} /*undeftype*/
+                    </otherwise>
+                </choose>
+            </foreach>
+            )
+            returning id into #{entityAttribute.satellite.id, javaType=long, jdbcType=NUMERIC, mode=OUT};
+        end;
+    </insert>
+
+    <insert id="removeAttributeSatellite">
+        insert into ${dsqlNames.linkSatelliteTableName} (id, link_id, ldts, removed, digest
+        <foreach collection="dsqlNames.attributeMeta.attributeAttributes" item="attributeMeta" open="," separator=",">
+            "${attributeMeta.nativeColumn}"
+        </foreach>
+        )
+        select ls.id,
+               ls.link_id,
+               ls.ldts,
+               1,
+               ls.digest
+        <foreach collection="dsqlNames.attributeMeta.attributeAttributes" item="attributeMeta" open="," separator=",">
+               ls."${attribute.meta.nativeColumn}"
+        </foreach>
+          from (
+            select ls.id,
+                   ls.link_id,
+                   ls.ldts,
+                   ls.removed,
+                   ls.digest
+        <foreach collection="dsqlNames.attributeMeta.attributeAttributes" item="attributeMeta" open="," separator=",">
+                   ls."${attribute.meta.nativeColumn}"
+        </foreach>
+                   , row_number() over(partition by ls.link_id order by ls.ldts desc) rn$
+              from ${dsqlNames.linkSatelliteTableName} ls
+             where ldts &lt;= #{ldts}
+               and ls.link_id in
+        <foreach collection="linkIds" item="linkId" open="(" separator="," close=")">
+                                #{linkId}
+        </foreach>
+        ) ls where removed = 0 and rn$ = 1
+    </insert>
+
+    <insert id="insertLinkFromExistedByHubPair" statementType="CALLABLE">
+        insert into ${dsqlNames.attributeMeta.linkTable} (id, ldts, removed, ${dsqlNames.linkParentHubIdColumnName}, ${dsqlNames.linkChildHubIdColumnName})
+        with l as (
+            select *
+              from (select id, ldts, ${dsqlNames.linkParentHubIdColumnName} main_hub_id, ${dsqlNames.linkChildHubIdColumnName} child_hub_id, removed,
+                           row_number() over (partition by ${dsqlNames.linkParentHubIdColumnName}, ${dsqlNames.linkChildHubIdColumnName} order by ldts desc) rn$
+                      from ${dsqlNames.attributeMeta.linkTable}
+                     where ${dsqlNames.linkParentHubIdColumnName} = #{parentHubId}
+        <if test="childHubId != null">
+                       and ${dsqlNames.linkChildHubIdColumnName} = #{childHubId}
+        </if>
+                       and ldts &lt;= #{ldts})
+             where rn$ = 1)
+        select ${dsqlNames.linkSequenceName}.nextval, #{ldts}, #{remove}, main_hub_id, child_hub_id
+          from l
+    </insert>
+
+    <insert id="insertLinkHasChangedHubIds" statementType="CALLABLE">
+        declare
+            v_removed number;
+            v_id number;
+            v_ldts timestamp;
+        begin
+            begin
+                select removed, id, ldts
+                  into v_removed,
+                       v_id,
+                       v_ldts
+                  from (select id, ldts, ${dsqlNames.linkParentHubIdColumnName} main_hub_id, ${dsqlNames.linkChildHubIdColumnName} child_hub_id, removed,
+                               row_number() over (partition by ${dsqlNames.linkParentHubIdColumnName}, ${dsqlNames.linkChildHubIdColumnName} order by ldts desc) rn$
+                          from ${dsqlNames.attributeMeta.linkTable}
+                         where ${dsqlNames.linkParentHubIdColumnName} = #{attribute.mainHubId}
+                           and ${dsqlNames.linkChildHubIdColumnName} = #{attribute.linkedHubId}
+                           and ldts &lt;= #{ldts})
+                 where rn$ = 1;
+
+                if v_removed != #{attribute.linkRemoved} then
+                    insert into ${dsqlNames.attributeMeta.linkTable} (id, ldts, removed, ${dsqlNames.linkParentHubIdColumnName}, ${dsqlNames.linkChildHubIdColumnName})
+                    values (${dsqlNames.linkSequenceName}.nextval, #{ldts}, #{attribute.linkRemoved}, #{attribute.mainHubId}, #{attribute.linkedHubId})
+                    returning id, ldts into v_id, v_ldts;
+                end if;
+
+            exception
+                when no_data_found then
+                    insert into ${dsqlNames.attributeMeta.linkTable} (id, ldts, removed, ${dsqlNames.linkParentHubIdColumnName}, ${dsqlNames.linkChildHubIdColumnName})
+                    values (${dsqlNames.linkSequenceName}.nextval, #{ldts}, #{attribute.linkRemoved}, #{attribute.mainHubId}, #{attribute.linkedHubId})
+                    returning id, ldts into v_id, v_ldts;
+            end;
+
+            #{attribute.linkId, javaType=long, jdbcType=NUMERIC, mode=OUT} := v_id;
+            #{attribute.linkLdts, javaType=java.time.LocalDateTime, jdbcType=TIMESTAMP, mode=OUT} := v_ldts;
+        end;
+    </insert>
+
+    <insert id="insertLinkHasChangedLinkId" statementType="CALLABLE">
+        declare
+            v_main_hub_id number;
+            v_linked_hub_id number;
+            v_removed number;
+        begin
+            select ${dsqlNames.linkParentHubIdColumnName}, ${dsqlNames.linkChildHubIdColumnName}, removed
+              into v_main_hub_id, v_linked_hub_id, v_removed
+              from ${dsqlNames.attributeMeta.linkTable}
+             where id = #{attribute.linkId};
+
+            if v_linked_hub_id != #{attribute.linkedHubId} or v_removed != #{attribute.linkRemoved} then
+                insert into ${dsqlNames.attributeMeta.linkTable} (id, ldts, removed, ${dsqlNames.linkParentHubIdColumnName}, ${dsqlNames.linkChildHubIdColumnName})
+                values (${dsqlNames.linkSequenceName}.nextval, #{ldts}, #{attribute.linkRemoved}, #{attribute.mainHubId}, ${attribute.linkedHubId})
+                returning id, ldts into #{attribute.linkId, javaType=long, jdbcType=NUMERIC, mode=OUT},
+                                        #{attribute.linkLdts, javaType=java.time.LocalDateTime, jdbcType=TIMESTAMP, mode=OUT};
+            end if;
+        end;
+    </insert>
+
+    <insert id="insertLinkRemoveExclusion" statementType="CALLABLE">
+        <!-- TODO: at big size of array its better to pass it as parameter
+             see  http://stackoverflow.com/questions/12719689/how-to-pass-java-list-of-objects-to-oracle-stored-procedure-using-mybatis -->
+        declare
+            v_ids_pair crs_pair_number_a := new crs_pair_number_a (
+        <foreach collection="references" item="attribute" open="crs_pair_number(" separator="),crs_pair_number(" close=")">
+                                                                   #{attribute.mainHubId}, #{attribute.linkedHubId}
+        </foreach>
+            );
+        begin
+            insert into ${dsqlNames.attributeMeta.linkTable} (id, ldts, removed, ${dsqlNames.linkParentHubIdColumnName}, ${dsqlNames.linkChildHubIdColumnName})
+            with l as (
+                select *
+                  from (select id, ldts, ${dsqlNames.linkParentHubIdColumnName} main_hub_id, ${dsqlNames.linkChildHubIdColumnName} child_hub_id, removed,
+                               row_number() over (partition by ${dsqlNames.linkParentHubIdColumnName}, ${dsqlNames.linkChildHubIdColumnName} order by ldts desc) rn$
+                          from ${dsqlNames.attributeMeta.linkTable}
+                         where ${dsqlNames.linkParentHubIdColumnName} = #{entity.hubId} <!-- TODO: bulk write ready, replace it by   IN (...hubIDs...) -->
+                           and ldts &lt;= #{ldts})
+                 where rn$ = 1
+                   and removed = 0)
+            select ${dsqlNames.linkSequenceName}.nextval, #{ldts}, 1, main_hub_id, child_hub_id
+              from l
+             where not exists(select 1
+                                from table(v_ids_pair) t
+                               where t.n1 = l.main_hub_id
+                                 and t.n2 = l.child_hub_id);
+        end;
+    </insert>
+
+    <insert id="insertLink" statementType="CALLABLE">
+        begin
+            insert into ${attribute.meta.linkTable} (id, ldts, removed, ${dsqlNames.linkParentHubIdColumnName}, ${dsqlNames.linkChildHubIdColumnName})
+            values (${dsqlNames.linkSequenceName}.nextval, #{attribute.linkLdts}, #{attribute.linkRemoved}, #{attribute.mainHubId}, #{attribute.linkedHubId})
+            returning id into #{attribute.linkId, javaType=long, jdbcType=NUMERIC, mode=OUT};
+        end;
+    </insert>
+
+
+    <!-- MULTILANG ATTRIBUTES operations -->
+    <select id="selectMultilangAttributeBulk" resultMap="multilangAttributeBulkResultMap">
+        with mll as (
+        <foreach collection="dsqlNames" item="name" separator=" union all ">
+                     select l.*, '${name.attributeMeta.key}' attribute_meta_key
+                       from (select id, ldts, ${name.linkParentHubIdColumnName} main_hub_id, localization_id, removed,
+                                    row_number() over (partition by ${name.linkParentHubIdColumnName}, localization_id order by ldts desc) rn$
+                               from ${name.attributeMeta.linkTable}
+                              where (${name.linkParentHubIdColumnName}, 1) in
+            <foreach item="entity" collection="entities" open="(" separator="," close=")">
+                                                                              (#{entity.hubId}, 1)
+            </foreach>
+                                and ldts &lt;= #{ldts}) l
+                      where rn$ = 1
+                        and removed = 0
+
+        </foreach>
+        )
+        select *
+          from (select mll.id link_id,
+                       mll.ldts link_ldts,
+                       mll.main_hub_id,
+                       mll.localization_id linked_hub_id,
+                       sml.id satellite_id,
+                       sml.ldts satellite_ldts,
+                       sml.removed,
+                       sml.string_ru value_ru,
+                       sml.string_en value_en,
+                       sml.text_ru,
+                       sml.text_en,
+                       mll.removed link_removed,
+                       sml.digest,
+                       mll.attribute_meta_key,
+                       row_number() over (partition by sml.h_id order by sml.ldts desc) rn$
+                  from crs_sys_s_localization sml join mll on mll.localization_id = sml.h_id
+                 where sml.ldts &lt;= #{ldts})
+         where rn$ = 1
+           and removed = 0
+    </select>
+
+    <insert id="insertMultilangHub" statementType="CALLABLE">
+        begin
+            insert into crs_sys_h_localization (id, key, ldts)
+            values (crs_sys_h_localization_seq.nextval, crs_sys_h_localization_seq.nextval, #{attribute.linkLdts})
+            returning id into #{attribute.linkedHubId, javaType=long, jdbcType=NUMERIC, mode=OUT};
+        end;
+    </insert>
+
+    <insert id="insertFileInfoHub" statementType="CALLABLE">
+        begin
+            insert into crs_sys_h_storage (id, key, ldts)
+            values (crs_sys_h_storage_seq.nextval, crs_sys_h_storage_seq.nextval, #{attribute.linkLdts})
+            returning id into #{attribute.linkedHubId, javaType=long, jdbcType=NUMERIC, mode=OUT};
+        end;
+    </insert>
+
+    <insert id="insertMultilangSatelliteString" statementType="CALLABLE">
+        begin
+            insert into crs_sys_s_localization (id, h_id, ldts, string_ru, string_en, removed, digest)
+            values (crs_sys_s_localization_seq.nextval,
+                    #{attribute.linkedHubId},
+                    #{attribute.satelliteLdts},
+                    trim(#{attribute.valueRu, javaType=string, jdbcType=VARCHAR}),
+                    trim(#{attribute.valueEn, javaType=string, jdbcType=VARCHAR}),
+                    #{attribute.linkRemoved},
+                    #{attribute.digest}
+            ) returning id into #{attribute.satelliteId, javaType=long, jdbcType=NUMERIC, mode=OUT};
+        end;
+    </insert>
+
+    <insert id="insertMultilangSatelliteText" statementType="CALLABLE">
+        begin
+            insert into crs_sys_s_localization (id, h_id, ldts, text_ru, text_en, removed, digest)
+            values (crs_sys_s_localization_seq.nextval,
+                    #{attribute.linkedHubId},
+                    #{attribute.satelliteLdts},
+                    #{attribute.valueRu, javaType=string, jdbcType=CLOB},
+                    #{attribute.valueEn, javaType=string, jdbcType=CLOB},
+                    #{attribute.linkRemoved},
+                    #{attribute.digest}
+            ) returning id into #{attribute.satelliteId, javaType=long, jdbcType=NUMERIC, mode=OUT};
+        end;
+    </insert>
+
+    <insert id="insertFileInfoSatellite" statementType="CALLABLE">
+        begin
+            insert into crs_sys_s_storage_desc (id, h_id, ldts, mime_type, name, removed, digest, description)
+            values (crs_sys_s_storage_desc_seq.nextval,
+                    #{attribute.linkedHubId},
+                    #{attribute.satelliteLdts},
+                    #{attribute.mimeType},
+                    #{attribute.name},
+                    #{attribute.linkRemoved},
+                    #{attribute.digest},
+                    #{attribute.description}
+            ) returning id into #{attribute.satelliteId, javaType=long, jdbcType=NUMERIC, mode=OUT};
+        end;
+    </insert>
+
+    <insert id="insertFileInfoContentSatellite" statementType="CALLABLE">
+        begin
+            insert into crs_sys_s_storage (id, h_id, ldts, data, removed, digest)
+            values (crs_sys_s_storage_seq.nextval,
+                    #{attribute.linkedHubId},
+                    #{attribute.satelliteLdts},
+                    #{attribute.content, jdbcType=BLOB},
+                    0,
+                    'n'
+            ) returning id into #{attribute.satelliteId, javaType=long, jdbcType=NUMERIC, mode=OUT};
+        end;
+    </insert>
+
+    <!-- FILE ATTRIBUTE operation -->
+    <select id="selectFileInfoAttributeBulk" resultMap="fileInfoAttributeBulkResultMap">
+        with fl as (
+        <foreach collection="dsqlNames" item="name" separator=" union all ">
+                    select l.*, '${name.attributeMeta.key}' attribute_meta_key
+                      from (select id, ldts, ${name.linkParentHubIdColumnName} main_hub_id, storage_id, removed,
+                                   row_number() over (partition by ${name.linkParentHubIdColumnName}, storage_id order by ldts desc) rn$
+                              from ${name.attributeMeta.linkTable}
+                             where ${name.linkParentHubIdColumnName} in
+            <foreach item="entity" collection="entities" open="(" separator="," close=")">
+                                                                        #{entity.hubId}
+            </foreach>
+                               and ldts &lt;= #{ldts}) l
+                     where rn$ = 1
+                       and removed = 0
+        </foreach>
+        )
+        select *
+          from (select fl.id link_id,
+                       fl.ldts link_ldts,
+                       fl.main_hub_id,
+                       fl.storage_id linked_hub_id,
+                       sf.id satellite_id,
+                       sf.ldts satellite_ldts,
+                       sf.mime_type,
+                       sf.name,
+                       sf.removed,
+                       fl.removed link_removed,
+                       fl.attribute_meta_key,
+                       sf.digest,
+                       sf.description,
+                       row_number() over (partition by sf.h_id order by sf.ldts desc) rn$
+                  from crs_sys_s_storage_desc sf join fl on fl.storage_id = sf.h_id
+                 where sf.ldts &lt;= #{ldts})
+         where rn$ = 1
+           and removed = 0
+    </select>
+
+    <select id="getFileContent" resultMap="blobResultMap">
+        select data content
+          from (select s.data,
+                       s.removed,
+                       row_number() over(order by s.ldts desc) rn$
+                  from crs_sys_s_storage s
+                 where s.h_id = #{fileInfoAttribute.linkedHubId}
+                   and s.ldts &lt;= #{ldts})
+         where removed = 0
+           and rn$ = 1
+    </select>
+</mapper>

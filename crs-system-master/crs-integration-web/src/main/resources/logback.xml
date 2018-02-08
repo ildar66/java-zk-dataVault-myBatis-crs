@@ -1,0 +1,32 @@
+<!DOCTYPE configuration>
+<!-- non-official xsd: https://raw.github.com/enricopulatzo/logback-XSD/master/src/main/xsd/logback.xsd -->
+<configuration>
+    <property name="logFile" value="./logs/master-domino/@projectName@/@projectName@.log" />
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${logFile}</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${logFile}.%d.zip</fileNamePattern>
+            <maxHistory>5</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>[%date] [%level] %msg [%file:%line] [%logger{100}] [%thread] [CRS-INTEGRATION-@projectVersion@]%n</pattern>
+        </encoder>
+    </appender>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[CRS-INTEGRATION-@projectVersion@] [%level] %msg [%file:%line] [%logger{100}]%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="liquibase" level="INFO" />
+    <logger name="ru.masterdm.crs.dao" level="DEBUG" />
+    <logger name="ru.masterdm.crs.service" level="DEBUG" />
+    <logger name="ru.masterdm.crs.integration.web.controller" level="DEBUG"/>
+    <logger name="ru.masterdm.crs.integration.client.portal" level="DEBUG" />
+
+    <root level="INFO">
+        <appender-ref ref="FILE" />
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>

@@ -1,0 +1,11 @@
+{
+  "key": "TESTENTITYMETA1#ATTRIBUTE3",
+  "name": {
+    "descriptionRu": "Attribute3Ru",
+    "descriptionEn": "Attribute3En"
+  },
+  "type": "TEXT",
+  "viewOrder": 2,
+  "multilang": false,
+  "nativeColumn": "ATTRIBUTE3"
+}

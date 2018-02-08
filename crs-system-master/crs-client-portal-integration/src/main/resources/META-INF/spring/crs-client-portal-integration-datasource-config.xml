@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <bean id="crsClientPortalIntegrationSqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="crsDataSource" />
+        <property name="configLocation" value="classpath:META-INF/spring/crs-client-portal-integration-mybatis-config.xml" />
+        <property name="mapperLocations" value="classpath:ru/masterdm/crs/integration/client/portal/dao/**/*.xml" />
+    </bean>
+
+    <bean id="crsClientPortalIntegrationSqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+        <constructor-arg index="0" ref="crsClientPortalIntegrationSqlSessionFactory" />
+    </bean>
+
+    <bean id="crsClientPortalIntegrationMapperScannerConfigurer" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="ru.masterdm.crs.integration.client.portal.dao" />
+        <property name="sqlSessionFactoryBeanName" value="crsClientPortalIntegrationSqlSessionFactory" />
+    </bean>
+</beans>

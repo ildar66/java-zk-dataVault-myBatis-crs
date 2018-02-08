@@ -1,0 +1,4 @@
+<zk>
+    <?component name="search_result" macroURI="/components/search_result.zul"?>
+    <search_result vflex="1" viewModel="@id('srvm') @init('ru.masterdm.crs.web.model.FavoritesViewModel', searchString=nav.searchString)" />
+</zk>

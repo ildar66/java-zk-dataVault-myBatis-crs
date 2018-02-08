@@ -1,0 +1,50 @@
+<zk>
+    <window title="${labels.audit_logs_title}"
+            viewModel="@id('vm') @init('ru.masterdm.crs.web.model.audit.AuditLogViewModel')" contentStyle="overflow: auto" height="100%">
+        <vbox vflex="1" hflex="1">
+            <hbox sizedByContent="true">
+                <vbox>
+                    <label value="@init(labels.audit_logs_date_from)"/>
+                    <datebox format="${labels.date_time_format}" width="150px"
+                             value="@bind(vm.dateFromFilter) @converter('ru.masterdm.crs.web.util.converter.DateTimeConverter')"
+                             onChange="@global-command('auditLogsRefresh')"/>
+                </vbox>
+                <vbox>
+                    <label value="@init(labels.audit_logs_date_to)"/>
+                    <datebox format="${labels.date_time_format}" width="150px"
+                             value="@bind(vm.dateToFilter) @converter('ru.masterdm.crs.web.util.converter.DateTimeConverter')"
+                             onChange="@global-command('auditLogsRefresh')"/>
+                </vbox>
+            </hbox>
+            <hbox sizedByContent="true">
+                <button iconSclass="z-icon-filter" autodisable="self" onClick="@command('editAuditFilter')"
+                        label="@init(labels.filter_button)" sclass="button-link"/>
+                <chosenbox onSelect="@command('deleteAuditFilter', event=event)" model="@bind(vm.auditLogFilters)"
+                           onClick="@command('editAuditFilter')" >
+                    <template name="model" var="lf">
+                        <label value="@bind(vm.getAuditLogFilterName(lf))"/>
+                    </template>
+                </chosenbox>
+            </hbox>
+            <listbox model="@load(vm.model)" vflex="1" multiple="true"
+                     sclass="entities-list">
+                <custom-attributes org.zkoss.zul.nativebar="false"/>
+                <listhead sizable="true" sclass="sizable">
+                    <listheader label="${labels.audit_logs_author}"/>
+                    <listheader label="${labels.DATETIME}"/>
+                    <listheader label="${labels.audit_logs_object}"/>
+                    <listheader label="${labels.audit_logs_action}"/>
+                </listhead>
+                <template name="model">
+                    <listitem>
+                        <listcell label="@init(each.executor.getFullName())"/>
+                        <listcell label="@init(each.recordTimestamp) @converter('ru.masterdm.crs.web.util.converter.DateTimeFormatConverter')"/>
+                        <listcell label="@init(vm.getObjectDescr(each))"/>
+                        <listcell label="@init(vm.getActionName(each.action))"/>
+                    </listitem>
+                </template>
+            </listbox>
+            <paging pageSize="@load(vm.pageSize)" totalSize="@load(vm.totalSize)" activePage="@bind(vm.activePage)" detailed="@bind(vm.totalSize ne 0)"/>
+        </vbox>
+    </window>
+</zk>

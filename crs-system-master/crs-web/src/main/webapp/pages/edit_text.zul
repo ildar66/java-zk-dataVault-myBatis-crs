@@ -1,0 +1,27 @@
+<zk>
+    <window title="@init(not empty vm.title ? vm.title : (vm.edit ? labels.edit_entity_text_title : labels.view_entity_text_title))"
+            viewModel="@id('vm') @init('ru.masterdm.crs.web.model.EditTextViewModel')"
+            position="center,center" closable="true" width="40%" height="400px"
+            onCancel="@command('detachWindow')" contentStyle="overflow:auto;" sizable="true"
+            maximizable="true">
+        <borderlayout>
+            <center border="none">
+                <textbox value="@bind(vm.text)"
+                         style="resize:none;" hflex="1" vflex="1"
+                         rows="20"
+                         readonly="${not vm.edit}"/>
+            </center>
+            <south border="none">
+                <vlayout>
+                    <separator/>
+                    <hbox width="100%" pack="end">
+                        <button onClick="@command('saveText')" label="@init(labels.save_button)" visible="@init(vm.edit)"
+                                tooltiptext="@init(labels.edit_button)" sclass="button-link"/>
+                        <button onClick="@command('detachWindow')" label="@init(labels.close_button)"
+                                tooltiptext="@init(labels.close_button)" sclass="button-link"/>
+                    </hbox>
+                </vlayout>
+            </south>
+        </borderlayout>
+    </window>
+</zk>

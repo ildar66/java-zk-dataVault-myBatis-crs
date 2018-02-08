@@ -1,0 +1,181 @@
+<zk>
+    <window border="none" apply="org.zkoss.bind.BindComposer"
+            viewModel="@id('vm') @init('ru.masterdm.crs.web.model.entity.ClientViewModel')"
+            height="100%" contentStyle="overflow:auto;">
+        <caption>
+            <forEach items="@init(nav.breadCrumbs)" var="breadCrumb" varStatus="breadCrumbStatus">
+                <label value="@init(breadCrumb.name)" style="cursor:pointer"
+                       onClick="@global-command('navigateGlobal', targetPage=breadCrumb.page)"/>
+                <label zclass="z-icon-angle-right"/>
+            </forEach>
+            <label value="@init(labels.client_title)"/>
+        </caption>
+        <vbox vflex="1" hflex="1" sclass="card-client">
+            <hbox spacing="0">
+                <label sclass="label-client"
+                       value="@init(vm.client.attributes[nav.getClientAttributeMeta('NAME').key].getValue(sessionScope.userProfile.locale))"/>
+                <a onClick="@command('removeFavorite')" visible="@load(vm.favorite)" sclass="favorites-in favorites-card"
+                   tooltiptext="@init(labels.favorites_remove)">
+                    <label zclass="z-icon-star"/>
+                </a>
+                <a onClick="@command('addFavorite')" visible="@load(not vm.favorite)" sclass="favorites-out favorites-card"
+                   tooltiptext="@init(labels.favorites_add)">
+                    <label zclass="z-icon-star-o"/>
+                </a>
+            </hbox>
+            <hbox hflex="1">
+                <vbox hflex="1">
+                    <label sclass="label-header"
+                           value="@init(labels.client_slx)"/>
+                    <label sclass="label-value" value="@init(vm.client.key)"/>
+                </vbox>
+                <vbox hflex="1">
+                    <label sclass="label-header" value="@init(nav.getClientAttributeLabel('OGRN'))"/>
+                    <forEach items="@init(vm.client.attributes[nav.getClientAttributeMeta('OGRN').key].value)" var="item"
+                             varStatus="itemStatus">
+                        <label sclass="label-value"
+                               value="@init(item.entity.getAttributeValue(nav.getClientOgrnAttributeKey('REG_NUM')))"/>
+                    </forEach>
+                </vbox>
+                <vbox hflex="1">
+                    <label sclass="label-header" value="@init(nav.getClientAttributeLabel('CLIENT_INN'))"/>
+                    <forEach items="@init(vm.client.attributes[nav.getClientAttributeMeta('CLIENT_INN').key].value)" var="item"
+                             varStatus="itemStatus">
+                        <label sclass="label-value" value="@init(item.entity.getAttributeValue(nav.getClientInnAttributeKey('TAX_ID')))"/>
+                    </forEach>
+                </vbox>
+            </hbox>
+            <separator spacing="0"/>
+            <tabbox vflex="1" hflex="1">
+                <tabs>
+                    <tab label="@init(labels.client_card)" selected="@load(vm.calcMode eq false)"/>
+                    <tab label="@init(labels.client_calculations)" selected="@load(vm.calcMode)"/>
+                </tabs>
+                <tabpanels>
+                    <tabpanel>
+                        <vbox hflex="1">
+                            <separator/>
+                            <hbox hflex="1">
+                                <vbox hflex="1">
+                                    <label sclass="label-header" value="@init(nav.getClientAttributeLabel('SEGMENT'))"/>
+                                    <forEach items="@init(vm.client.attributes[nav.getClientAttributeMeta('SEGMENT').key].value)" var="item"
+                                             varStatus="itemStatus">
+                                        <label sclass="label-value"
+                                               value="@init(item.entity.getAttribute(nav.getClientSegmentAttributeKey('NAME')).getValue(sessionScope.userProfile.locale))"/>
+                                    </forEach>
+                                </vbox>
+                                <space bar="true" height="40px" width="20px"/>
+                                <vbox hflex="1">
+                                    <label sclass="label-header" value="@init(nav.getClientAttributeLabel('INDUSTRY'))"/>
+                                    <forEach items="@init(vm.client.attributes[nav.getClientAttributeMeta('INDUSTRY').key].value)" var="item"
+                                             varStatus="itemStatus">
+                                        <label sclass="label-value"
+                                               value="@init(item.entity.getAttribute(nav.getClientIndustryAttributeKey('NAME')).getValue(sessionScope.userProfile.locale))"/>
+                                    </forEach>
+                                </vbox>
+                                <space bar="true" height="40px" width="20px"/>
+                                <vbox hflex="1">
+                                    <label sclass="label-header" value="@init(nav.getClientAttributeLabel('CATEGORY'))"/>
+                                    <forEach items="@init(vm.client.attributes[nav.getClientAttributeMeta('CATEGORY').key].value)" var="item"
+                                             varStatus="itemStatus">
+                                        <label sclass="label-value"
+                                               value="@init(item.entity.getAttribute(nav.getClientCategoryAttributeKey('NAME')).getValue(sessionScope.userProfile.locale))"/>
+                                    </forEach>
+                                </vbox>
+                            </hbox>
+                            <separator bar="true"/>
+                            <vbox hflex="1">
+                                <label sclass="label-header" value="@init(labels.client_department)"/>
+                                <forEach items="@init(vm.client.attributes[nav.getClientAttributeMeta('DEPARTMENT').key].value)" var="item"
+                                         varStatus="itemStatus">
+                                    <label sclass="label-value"
+                                           value="@init(item.entity.attributes[nav.getClientDepartmentAttributeKey('NAME')].getValue(sessionScope.userProfile.locale)))"/>
+                                </forEach>
+                                <vbox hflex="1">
+                                    <label sclass="label-header" value="@init(nav.getClientAttributeLabel('CLIENT_DEPARTMENT'))"/>
+                                    <forEach items="@init(vm.client.attributes[nav.getClientAttributeMeta('CLIENT_DEPARTMENT').key].value)" var="item"
+                                             varStatus="itemStatus">
+                                        <label sclass="label-value"
+                                               value="@init(item.entity.attributes[nav.getClientCpDepartmentAttributeKey('NAME')].getValue(sessionScope.userProfile.locale)))"/>
+                                    </forEach>
+                                </vbox>
+                            </vbox>
+                            <separator/>
+                            <hbox hflex="1">
+                                <vbox hflex="1">
+                                    <label sclass="label-header" value="@init(nav.getClientAttributeLabel('FULL_NAME'))"/>
+                                    <label sclass="label-value"
+                                           value="@init(vm.client.attributes[nav.getClientAttributeMeta('FULL_NAME').key].getValue(sessionScope.userProfile.locale))"/>
+                                </vbox>
+                                <vbox hflex="1">
+                                    <label sclass="label-header" value="@init(nav.getClientAttributeLabel('COUNTRY'))"/>
+                                    <forEach items="@init(vm.client.attributes[nav.getClientAttributeMeta('COUNTRY').key].value)" var="item"
+                                             varStatus="itemStatus">
+                                        <label sclass="label-value"
+                                               value="@init(item.entity.attributes[nav.getClientCountryAttributeKey('NAME')].getValue(sessionScope.userProfile.locale)))"/>
+                                    </forEach>
+                                </vbox>
+                            </hbox>
+                            <separator/>
+                            <hbox hflex="1">
+                                <vbox hflex="1">
+                                    <label sclass="label-header" value="@init(labels.client_olf)"/>
+                                    <forEach items="@init(vm.client.attributes[nav.getClientAttributeMeta('OPF').key].value)" var="item"
+                                             varStatus="itemStatus">
+                                        <label sclass="label-value"
+                                               value="@init(item.entity.getAttribute(nav.getClientOpfAttributeKey('NAME')).getValue(sessionScope.userProfile.locale))"/>
+                                    </forEach>
+                                </vbox>
+                                <vbox hflex="1">
+                                    <label sclass="label-header" value="@init(nav.getClientAttributeLabel('CLIENT_TYPE'))"/>
+                                    <forEach items="@init(vm.client.attributes[nav.getClientAttributeMeta('CLIENT_TYPE').key].value)" var="item"
+                                             varStatus="itemStatus">
+                                        <label sclass="label-value"
+                                               value="@init(item.entity.attributes[nav.getClientTypeAttributeKey('NAME')].getValue(sessionScope.userProfile.locale)))"/>
+                                    </forEach>
+                                </vbox>
+                            </hbox>
+                            <separator/>
+                            <hbox hflex="1">
+                                <vbox hflex="1">
+                                    <label sclass="label-header" value="@init(labels.search_result_last_rating)"/>
+                                    <label/>
+                                </vbox>
+                                <space bar="true" height="40px" width="20px"/>
+                                <vbox hflex="1">
+                                    <label sclass="label-header" value="@init(labels.search_result_last_rating_date)"/>
+                                    <label/>
+                                </vbox>
+                                <space bar="true" height="40px" width="20px"/>
+                                <vbox hflex="1">
+                                    <label sclass="label-header" value="@init(labels.search_result_calc_model)"/>
+                                    <label/>
+                                </vbox>
+                            </hbox>
+                            <separator bar="true"/>
+                            <label sclass="clients-list" value="@init(labels.client_group)"/>
+                            <grid hflex="1" sclass="grid-form">
+                                <columns>
+                                    <column label="@init(nav.getClientGroupAttributeLabel('NAME'))"/>
+                                    <column label="@init(labels.client_group_code)"/>
+                                </columns>
+                                <rows>
+                                    <row>
+                                        <a onClick="@command('navigateClientGroup', clientGroup=vm.group)"
+                                           label="@init(vm.group.attributes[nav.getClientGroupAttributeMeta('NAME').key].getValue(sessionScope.userProfile.locale))"
+                                           autodisable="self" sclass="common_link result-client"/>
+                                        <label value="@init(vm.group.key)"/>
+                                    </row>
+                                </rows>
+                            </grid>
+                        </vbox>
+                    </tabpanel>
+                    <tabpanel viewModel="@id('vmcalcs') @init('ru.masterdm.crs.web.model.calc.CalculationsViewModel', entity=vm.client)">
+                        <?component name="calculations" macroURI="/components/calc/calculations_lists.zul"?>
+                        <calculations vflex="1"/>
+                    </tabpanel>
+                </tabpanels>
+            </tabbox>
+        </vbox>
+    </window>
+</zk>

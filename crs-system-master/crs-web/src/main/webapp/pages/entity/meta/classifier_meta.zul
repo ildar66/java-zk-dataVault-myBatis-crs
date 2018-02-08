@@ -1,0 +1,151 @@
+<zk>
+    <window apply="org.zkoss.bind.BindComposer"
+            viewModel="@id('vm') @init('ru.masterdm.crs.web.model.entity.meta.ClassifierMetaViewModel')"
+            height="100%" contentStyle="overflow:auto;">
+        <caption>
+            <label value="${labels.layout_classifier_meta_list_title}"/>
+            <label zclass="z-icon-angle-right"/>
+            <label value="${labels.classifier_meta_list_title}" style="cursor:pointer" onClick="@command('navigateClassifierMetaList')"/>
+            <label zclass="z-icon-angle-right"/>
+            <label value="@bind(vm.add ? labels.classifier_meta_title_add : labels.classifier_meta_title_edit)"/>
+            <toolbar>
+                <toolbarbutton onClick="@command('persistEntityMeta')" iconSclass="z-icon-save"
+                               label="@init(labels.save_button)" disabled="@load(not nav.isPermittedForEntityType('CLASSIFIER','EDIT'))"/>
+                <toolbarbutton iconSclass="z-icon-remove"
+                               onClick="@command('removeEntityMeta', entityMeta=vm.entityMeta)"
+                               visible="@load(not vm.add)"
+                               label="@init(labels.delete_button)" disabled="@load(not nav.isPermittedForEntityType('CLASSIFIER','REMOVE'))"/>
+            </toolbar>
+        </caption>
+
+        <borderlayout>
+            <north border="none" height="100%">
+                <vbox vflex="1" hflex="1">
+                    <grid sclass="grid-form">
+                        <columns>
+                            <column hflex="1"/>
+                            <column hflex="4"/>
+                        </columns>
+                        <rows>
+                            <row>
+                                <label value="@init(labels.key)"/>
+                                <textbox value="@load(vm.entityMeta.key) @save(vm.entityMeta.key, before='persistEntityMeta')"
+                                         constraint="@init(vm.entityKeyConstraint)" maxlength="19" hflex="1" disabled="@load(not vm.add)"
+                                         tooltiptext="@load(vm.entityMeta.key)"/>
+                            </row>
+                            <row>
+                                <label value="@init(labels.name_ru)"/>
+                                <textbox
+                                        value="@load(vm.entityMeta.name.descriptionRu) @save(vm.entityMeta.name.descriptionRu, before='persistEntityMeta')"
+                                        constraint="no empty" maxlength="@load(nav.stringMaxLength)" hflex="1"/>
+                            </row>
+                            <row>
+                                <label value="@init(labels.name_en)"/>
+                                <textbox
+                                        value="@load(vm.entityMeta.name.descriptionEn) @save(vm.entityMeta.name.descriptionEn, before='persistEntityMeta')"
+                                        constraint="no empty" maxlength="@load(nav.stringMaxLength)" hflex="1"/>
+                            </row>
+                            <row>
+                                <label value="@init(labels.comment_ru)"/>
+                                <textbox
+                                        value="@load(vm.entityMeta.comment.descriptionRu) @save(vm.entityMeta.comment.descriptionRu, before='persistEntityMeta')"
+                                        hflex="1" rows="3"/>
+                            </row>
+                            <row>
+                                <label value="@init(labels.comment_en)"/>
+                                <textbox
+                                        value="@load(vm.entityMeta.comment.descriptionEn) @save(vm.entityMeta.comment.descriptionEn, before='persistEntityMeta')"
+                                        hflex="1" rows="3"/>
+                            </row>
+                            <row>
+                                <label value="@init(labels.classifier_meta_type)"/>
+                                <combobox model="@load(vm.attributeTypes.keySet())" readonly="true"
+                                          selectedItem="@bind(vm.typeAttributeMeta.type) @save(vm.typeAttributeMeta.type, before='persistEntityMeta')"
+                                          constraint="no empty" hflex="1"
+                                          onChange="@command('changeAttributeType', attribute=vm.typeAttributeMeta)" disabled="@load(not vm.add)">
+                                    <template name="model">
+                                        <comboitem label="@load(vm.attributeTypes[each])"/>
+                                    </template>
+                                </combobox>
+                            </row>
+                            <row>
+                                <label value="@init(labels.classifier_meta_reference)"/>
+                                <if test="@load((vm.typeAttributeMeta.type ne null) and (vm.typeAttributeMeta.type.name() eq 'REFERENCE'))">
+                                    <box>
+                                        <a onClick="@command('editEntities')"
+                                           disabled="@load((vm.entityMeta.id == null or vm.refEntityDeleted) ? true : false)">
+                                            <label value="@load(vm.typeAttributeMeta.attributeKey)"
+                                                   tooltiptext="@load(vm.typeAttributeMeta.attributeKey)"/>
+                                            <label visible="@load(vm.refEntityDeleted)" value="@init(labels.classifier_meta_entity_ref_deleted)"/>
+                                        </a>
+                                    </box>
+                                </if>
+                            </row>
+                            <row>
+                                <label value="@init(labels.classifier_meta_type_nullable)"/>
+                                <checkbox
+                                        checked="@load(vm.typeAttributeMeta.nullable) @save(vm.typeAttributeMeta.nullable, before='persistEntityMeta')"/>
+                            </row>
+                            <row>
+                                <label value="@init(labels.classifier_meta_comment_nullable)"/>
+                                <checkbox
+                                        checked="@load(vm.commentAttributeMeta.nullable) @save(vm.commentAttributeMeta.nullable, before='persistEntityMeta')"/>
+                            </row>
+                            <row>
+                                <label value="@init(labels.entity_meta_group)"/>
+                                <label value="@init(vm.entityMetaGroupName)"/>
+                            </row>
+                            <row visible="@load(vm.showAddDefaultValueButton())">
+                                <cell colspan="2">
+                                    <toolbar>
+                                        <toolbarbutton iconSclass="z-icon-plus" autodisable="self" onClick="@command('addDefaultValue')"
+                                                       label="@init(labels.classifier_meta_add_default_value_button)"/>
+                                    </toolbar>
+                                </cell>
+                            </row>
+                            <row visible="@load(vm.showDeleteDefaultValueButton())">
+                                <cell colspan="2">
+                                    <toolbar>
+                                        <toolbarbutton iconSclass="z-icon-remove" autodisable="self" onClick="@command('deleteDefaultValue')"
+                                                       label="@init(labels.classifier_meta_delete_default_value_button)"/>
+                                    </toolbar>
+                                </cell>
+                            </row>
+                            <if test="@load(vm.isDefaultValueTypeNumber())">
+                                <row>
+                                    <label value="@init(labels.classifier_meta_default_value)"/>
+                                    <decimalbox
+                                            value="@load(vm.defaultValue) @save(vm.defaultValue, before='persistEntityMeta')"
+                                            hflex="1"/>
+                                </row>
+                            </if>
+                            <if test="@load(vm.isDefaultValueTypeBoolean())">
+                                <row>
+                                    <label value="@init(labels.classifier_meta_default_value)"/>
+                                    <checkbox
+                                            checked="@load(vm.booleanDefault) @save(vm.booleanDefault, before='persistEntityMeta')"/>
+                                </row>
+                            </if>
+                            <if test="@load(vm.isDefaultValueTypeDateTime())">
+                                <row>
+                                    <label value="@init(labels.classifier_meta_default_value)"/>
+                                    <datebox format="@init(labels.date_time_format)"
+                                             value="@load(vm.dateTimeDefault) @converter('ru.masterdm.crs.web.util.converter.DateTimeConverter') @save(vm.dateTimeDefault, before='persistEntityMeta')"
+                                             width="140px"/>
+                                </row>
+                            </if>
+                            <if test="@load(vm.isDefaultValueTypeDate())">
+                                <row>
+                                    <label value="@init(labels.classifier_meta_default_value)"/>
+                                    <datebox format="@init(labels.date_format)"
+                                             value="@load(vm.dateDefault) @converter('ru.masterdm.crs.web.util.converter.DateConverter') @save(vm.dateDefault, before='persistEntityMeta')"
+                                             width="140px"/>
+                                </row>
+                            </if>
+                        </rows>
+                    </grid>
+                </vbox>
+            </north>
+        </borderlayout>
+    </window>
+</zk>

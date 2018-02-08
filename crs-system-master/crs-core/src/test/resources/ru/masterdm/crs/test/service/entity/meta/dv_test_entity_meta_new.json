@@ -1,0 +1,55 @@
+{
+  "key": "XXX_HUB_TABLE",
+  "linkTable": "XXX_SR_LINK_TABLE",
+  "removed": false,
+  "attributes": [
+    {
+      "id" : 1,
+      "key": "STRING_VAL",
+      "linkTable": "LINK1",
+      "removed": false,
+      "viewOrder": 0,
+      "type": "STRING",
+      "nullable": false,
+      "multilang": true,
+      "link": false,
+      "filterAvailable": false
+    },
+    {
+      "key": "NUMBER_VAL",
+      "removed": false,
+      "viewOrder": 0,
+      "type": "NUMBER",
+      "nullable": false,
+      "multilang": false,
+      "link": false,
+      "filterAvailable": false,
+      "nativeColumn": "NUMBER_VAL"
+    },
+    {
+      "key": "FILE_VAL",
+      "linkTable": "LINK_FILE",
+      "removed": false,
+      "viewOrder": 0,
+      "type": "FILE",
+      "nullable": false,
+      "multilang": false,
+      "link": false,
+      "filterAvailable": false
+    },
+    {
+      "id" : 2,
+      "key": "TEXT_VAL",
+      "linkTable": "LINK_TEXT",
+      "removed": false,
+      "viewOrder": 0,
+      "type": "TEXT",
+      "nullable": false,
+      "multilang": true,
+      "link": false,
+      "filterAvailable": false,
+      "nativeColumn": "TEXT_VAL"
+    }
+  ],
+  "hierarchical": false
+}

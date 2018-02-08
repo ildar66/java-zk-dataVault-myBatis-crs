@@ -1,0 +1,24 @@
+<Configure id='wac' class="org.eclipse.jetty.webapp.WebAppContext">
+    <Set name="overrideDescriptor"><SystemProperty name="jetty.overrideWebXml" /></Set>
+    <New id="DSTest" class="org.eclipse.jetty.plus.jndi.Resource">
+        <Arg></Arg>
+        <Arg>jdbc/CRS</Arg>
+        <Arg>
+            <New class="oracle.jdbc.pool.OracleDataSource">
+                <Set name="DriverType">thin</Set>
+                <Set name="URL"><SystemProperty name="jetty.dbUrl" /></Set>
+                <Set name="User"><SystemProperty name="jetty.dbUsername" /></Set>
+                <Set name="Password"><SystemProperty name="jetty.dbPassword" /></Set>
+                <Set name="connectionCachingEnabled">true</Set>
+                <Set name="connectionCacheProperties">
+                    <New class="java.util.Properties">
+                        <Call name="setProperty">
+                            <Arg>MinLimit</Arg>
+                            <Arg>5</Arg>
+                        </Call>
+                    </New>
+                </Set>
+            </New>
+        </Arg>
+    </New>
+</Configure>

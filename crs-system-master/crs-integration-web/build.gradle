@@ -1,0 +1,28 @@
+apply plugin: 'war'
+
+dependencies {
+    compileOnly(
+            project(':crs-integration-core'),
+            project(':crs-client-portal-integration'),
+            project(':crs-structure-export'),
+            project(':crs-structure-import'),
+            project(':crs-rating-import'),
+
+            "org.springframework:spring-web:$springVersion",
+            "org.springframework:spring-webmvc:$springVersion",
+
+            "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion",
+            "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion"
+    )
+}
+
+gretty.logbackConfigFile = project.buildDir.path + '/resources/main/logback.xml'
+
+war.dependsOn(generateRebel)
+war {
+    classpath += configurations.compileOnly.filter {
+        !it.name.contains('commons-logging')
+    }
+
+    exclude('**/jetty9-env.xml')
+}

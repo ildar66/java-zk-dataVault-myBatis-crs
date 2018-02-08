@@ -1,0 +1,143 @@
+<zk>
+    <borderlayout>
+
+        <north border="none">
+            <vbox>
+                <grid sclass="grid-form">
+                    <columns>
+                        <column hflex="1"/>
+                        <column hflex="4"/>
+                    </columns>
+                    <rows>
+                        <row>
+                            <label value="@init(labels.key.concat(':'))"/>
+                            <textbox value="@bind(vm.entityMeta.key) @save(vm.entityMeta.key, before='persistEntityMeta')"
+                                     constraint="@load(vm.entityKeyConstraint)" maxlength="19" hflex="1" disabled="@load(not vm.add)"
+                                     tooltiptext="@load(vm.entityMeta.key)"/>
+                        </row>
+                        <row>
+                            ${labels.name_ru}:
+                            <textbox
+                                    value="@bind(vm.entityMeta.name.descriptionRu) @save(vm.entityMeta.name.descriptionRu, before='persistEntityMeta')"
+                                    constraint="no empty" maxlength="@load(nav.stringMaxLength)" hflex="1"/>
+                        </row>
+                        <row>
+                            ${labels.name_en}:
+                            <textbox
+                                    value="@bind(vm.entityMeta.name.descriptionEn) @save(vm.entityMeta.name.descriptionEn, before='persistEntityMeta')"
+                                    constraint="no empty" maxlength="@load(nav.stringMaxLength)" hflex="1"/>
+                        </row>
+                        <row>
+                            ${labels.comment_ru}:
+                            <textbox
+                                    value="@bind(vm.entityMeta.comment.descriptionRu) @save(vm.entityMeta.comment.descriptionRu, before='persistEntityMeta')"
+                                    hflex="1" rows="3"/>
+                        </row>
+                        <row>
+                            ${labels.comment_en}:
+                            <textbox
+                                    value="@bind(vm.entityMeta.comment.descriptionEn) @save(vm.entityMeta.comment.descriptionEn, before='persistEntityMeta')"
+                                    hflex="1" rows="3"/>
+                        </row>
+                        <row>
+                            ${labels.entity_meta_group}:
+                            <label value="@init(vm.entityMetaGroupName)"/>
+                        </row>
+                        <row visible="@init(showHierarchical)">
+                            <label value="@init(labels.entity_meta_filter_hierarchical)"/>
+                            <checkbox checked="@bind(vm.entityMeta.hierarchical)"/>
+                        </row>
+                    </rows>
+                </grid>
+            </vbox>
+        </north>
+
+        <center border="none">
+            <vbox vflex="1" hflex="1">
+                <separator/>
+                <tabbox id="tb" vflex="1" hflex="1">
+                    <tabs id="tabs">
+                        <tab label="${labels.entity_meta_attributes}"/>
+                    </tabs>
+                    <tabpanels>
+                        <tabpanel>
+                            <grid model="@bind(vm.attributes)" vflex="1">
+                                <custom-attributes org.zkoss.zul.nativebar="false"/>
+                                <auxhead>
+                                    <auxheader colspan="10">
+                                        <toolbar>
+                                            <toolbarbutton iconSclass="z-icon-plus" autodisable="self" onClick="@command('addAttributeMeta')"
+                                                           label="@init(labels.add_button)" disabled="@load(not vm.entityMetaEditAllowed)"/>
+                                        </toolbar>
+                                    </auxheader>
+                                </auxhead>
+                                <columns>
+                                    <column label="${labels.key}"/>
+                                    <column label="${labels.entity_meta_type}"/>
+                                    <column label="${labels.entity_meta_reference}"/>
+                                    <column align="center" label="${labels.entity_meta_nullable}"/>
+                                    <column align="center" label="${labels.entity_meta_multilang}" visible="@load(not vm.notFormFieldHidden)"/>
+                                    <column label="${labels.name_ru}"/>
+                                    <column label="${labels.name_en}"/>
+                                    <column align="center" label="${labels.entity_meta_view_order}"/>
+                                    <column align="center" label="${labels.entity_meta_filter_available}"/>
+                                    <column align="center"/>
+                                </columns>
+                                <template name="model">
+                                    <row>
+                                        <div>
+                                            <textbox value="@load(each.key)" width="99%" disabled="true"
+                                                     if="${vm.changeAttributeMetaKeyDisabled(each)}" tooltiptext="@load(each.key)"/>
+                                            <textbox value="@bind(each.key) @validator(vm.keyValidator) @save(each.key, before='persistEntityMeta')"
+                                                     constraint="@load(vm.attributeNativeColumnConstraint)" maxlength="30" width="99%"
+                                                     if="${not vm.changeAttributeMetaKeyDisabled(each)}"/>
+                                        </div>
+                                        <combobox model="@load(vm.attributeTypes.keySet())" readonly="true"
+                                                  selectedItem="@bind(each.type) @save(each.type, before='persistEntityMeta')"
+                                                  constraint="no empty" disabled="@load(vm.changeAttributeMetaKeyDisabled(each))" hflex="1"
+                                                  onChange="@command('changeAttributeType', attribute=each)">
+                                            <template name="model">
+                                                <comboitem label="@load(vm.attributeTypes[each])"/>
+                                            </template>
+                                        </combobox>
+                                        <div>
+                                            <label value="@load(each.attributeKey)" tooltiptext="@load(each.attributeKey)"/>
+                                        </div>
+                                        <checkbox checked="@bind(each.nullable)" disabled="@load(vm.changeAttributeMetaDisabled(each))"/>
+                                        <checkbox checked="@bind(each.multilang)" disabled="@load(vm.changeAttributeMetaKeyDisabled(each))"
+                                                  visible="@load(not vm.notFormFieldHidden)"/>
+                                        <div>
+                                            <textbox value="@bind(each.name.descriptionRu) @save(each.name.descriptionRu, before='persistEntityMeta')"
+                                                     constraint="no empty" maxlength="@load(nav.stringMaxLength)" width="99%"
+                                                     visible="@load(not vm.changeAttributeMetaDisabled(each))"/>
+                                            <label value="@load(each.name.descriptionRu)" visible="@load(vm.changeAttributeMetaDisabled(each))"/>
+                                        </div>
+                                        <div>
+                                            <textbox value="@bind(each.name.descriptionEn) @save(each.name.descriptionEn, before='persistEntityMeta')"
+                                                     constraint="no empty" maxlength="@load(nav.stringMaxLength)" width="99%"
+                                                     visible="@load(not vm.changeAttributeMetaDisabled(each))"/>
+                                            <label value="@bind(each.name.descriptionEn)" visible="@load(vm.changeAttributeMetaDisabled(each))"/>
+                                        </div>
+                                        <div>
+                                            <spinner width="99%" style="text-align: center" value="@bind(each.viewOrder)"
+                                                     constraint="no empty,min 0 max 999" maxlength="3"
+                                                     visible="@load(not vm.changeAttributeMetaDisabled(each))"/>
+                                            <spinner width="99%" style="text-align: center" value="@bind(each.viewOrder)"
+                                                     visible="@load(vm.changeAttributeMetaDisabled(each))" disabled="true"/>
+                                        </div>
+                                        <checkbox checked="@bind(each.filterAvailable)" disabled="@load(vm.changeAttributeMetaDisabled(each))"/>
+                                        <button iconSclass="z-icon-minus" autodisable="self" sclass="button-icon"
+                                                onClick="@command('removeAttributeMeta', attributeMeta=each)"
+                                                visible="@load(not vm.changeAttributeMetaDisabled(each))"
+                                                tooltiptext="@init(labels.delete_button)" disabled="@load(not vm.entityMetaEditAllowed)"/>
+                                    </row>
+                                </template>
+                            </grid>
+                        </tabpanel>
+                    </tabpanels>
+                </tabbox>
+            </vbox>
+        </center>
+
+    </borderlayout>
+</zk>

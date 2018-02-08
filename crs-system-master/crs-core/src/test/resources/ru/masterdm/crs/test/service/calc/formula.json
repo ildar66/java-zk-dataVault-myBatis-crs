@@ -1,0 +1,19 @@
+{
+  "key": "F_KEY",
+  "removed": false,
+  "name": {
+    "descriptionRu": "name_ru",
+    "descriptionEn": "name_en"
+  },
+  "formula": {
+    "removed": false,
+    "data": "print('test');"
+  },
+  "type": "FORMULA",
+  "comment": {
+    "descriptionRu": "comment_ru",
+    "descriptionEn": "comment_en"
+  },
+  "evalLang": "nashorn",
+  "resultType": "NUMBER"
+}

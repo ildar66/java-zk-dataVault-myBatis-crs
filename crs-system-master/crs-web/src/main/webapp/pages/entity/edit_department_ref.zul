@@ -1,0 +1,71 @@
+<zk>
+    <window title="@init(vm.edit ? labels.edit_department_ref_title : labels.view_department_ref_title)" apply="org.zkoss.bind.BindComposer"
+            viewModel="@id('vm') @init('ru.masterdm.crs.web.model.entity.EditDepartmentRefViewModel')"
+            position="center,center" closable="true" width="60%" height="600px"
+            action="show: slideDown;hide: slideUp" onCancel="@command('detachWindow')" contentStyle="overflow:auto;" sizable="true"
+            maximizable="true">
+        <borderlayout>
+            <center border="none">
+                <hbox hflex="1" vflex="true">
+                    <vbox hflex="1" vflex="true">
+                        <separator height="24px"/>
+                        <listbox model="@bind(vm.chosenModel)" hflex="1" vflex="true" multiple="true" rows="5" sclass="entities-list">
+                            <custom-attributes org.zkoss.zul.nativebar="false"/>
+                            <listhead>
+                                <listheader label="@init(labels.name)"/>
+                            </listhead>
+                            <template name="model">
+                                <listitem>
+                                    <listcell label="${each.name.getDescription(sessionScope.userProfile.locale)}"/>
+                                </listitem>
+                            </template>
+                        </listbox>
+                    </vbox>
+
+                    <vbox spacing="10px" width="24px" vflex="1">
+                        <separator/>
+                        <separator/>
+                        <separator/>
+                        <separator/>
+                        <button iconSclass="z-icon-chevron-left" autodisable="self" onClick="@command('choose')"
+                                tooltiptext="@init(labels.select_button)" sclass="button-icon"/>
+                        <button iconSclass="z-icon-remove" autodisable="self" onClick="@command('remove')"
+                                tooltiptext="@init(labels.delete_button)" sclass="button-icon" disabled="@load(not vm.edit)"/>
+                        <button iconSclass="z-icon-trash" autodisable="self" onClick="@command('removeAll')"
+                                tooltiptext="@init(labels.delete_all_button)" sclass="button-icon" disabled="@load(not vm.edit)"/>
+                    </vbox>
+
+                    <vbox hflex="1" vflex="true">
+                        <hbox hflex="1">
+                            <span sclass="z-icon-filter"/>
+                            <textbox instant="true" width="200px" value="@bind(vm.entityFilter)" onChange="@command('changeFilter')"/>
+                        </hbox>
+                        <listbox model="@bind(vm.candidateModel)" hflex="1" vflex="true" multiple="true" rows="5" sclass="entities-list">
+                            <custom-attributes org.zkoss.zul.nativebar="false"/>
+                            <listhead>
+                                <listheader label="@init(labels.name)"/>
+                            </listhead>
+                            <template name="model">
+                                <listitem>
+                                    <listcell label="${each.name.getDescription(sessionScope.userProfile.locale)}"/>
+                                </listitem>
+                            </template>
+                        </listbox>
+                    </vbox>
+                </hbox>
+
+            </center>
+            <south border="none">
+                <vlayout>
+                    <separator/>
+                    <hbox width="100%" pack="end">
+                        <button onClick="@command('saveEntity')" label="${labels.save_button}"
+                                tooltiptext="@init(labels.save_button)" sclass="button-link" disabled="@load(not vm.edit)"/>
+                        <button onClick="@command('detachWindow')" label="${labels.close_button}"
+                                tooltiptext="@init(labels.close_button)" sclass="button-link"/>
+                    </hbox>
+                </vlayout>
+            </south>
+        </borderlayout>
+    </window>
+</zk>

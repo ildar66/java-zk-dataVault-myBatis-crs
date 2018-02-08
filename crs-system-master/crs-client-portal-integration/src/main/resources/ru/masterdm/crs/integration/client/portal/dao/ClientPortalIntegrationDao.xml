@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ru.masterdm.crs.integration.client.portal.dao.ClientPortalIntegrationDao">
+    <resultMap id="multilangDescriptionResultMap" type="multilangDescription" autoMapping="true"/>
+    <resultMap id="departmentResultMap" type="cpiDepartment" autoMapping="true">
+        <association property="name" resultMap="multilangDescriptionResultMap" columnPrefix="name_"/>
+        <association property="fullName" resultMap="multilangDescriptionResultMap" columnPrefix="full_name_"/>
+    </resultMap>
+    <resultMap id="departmentMappingResultMap" type="org.apache.commons.lang3.tuple.MutablePair">
+        <result property="left" column="crs_department_id"/>
+        <result property="right" column="cp_department_id"/>
+    </resultMap>
+
+    <select id="getCron" resultType="string">
+        select setting_value
+          from crs_cpi_setting
+         where mnemo = 'CRON'
+    </select>
+
+    <update id="startSynchronization">
+        begin
+          crs_cpi_pkg.synchronize_data;
+        end;
+    </update>
+
+    <select id="getLatestSyncDate" resultType="java.time.LocalDateTime">
+        select max(last_sync_date)
+          from crs_cpi_last_sync
+    </select>
+
+    <select id="getDepartments" resultMap="departmentResultMap">
+        select departmentid id,
+               dep_name name_description_ru, dep_name_en name_description_en,
+               dep_full_name full_name_description_ru, dep_full_name_en full_name_description_en
+          from crs_cpi_department
+         <if test="namePattern != null">
+            <if test="'ru'.equalsIgnoreCase(locale)">
+                <where>
+                       lower(dep_name) like lower(concat('%', concat(#{namePattern}, '%')))
+                    or lower(dep_full_name) like lower(concat('%', concat(#{namePattern}, '%')))
+                </where>
+            </if>
+            <if test="'en'.equalsIgnoreCase(locale)">
+                <where>
+                       lower(dep_name_en) like lower(concat('%', concat(#{namePattern}, '%')))
+                    or lower(dep_full_name_en) like lower(concat('%', concat(#{namePattern}, '%')))
+                </where>
+            </if>
+         </if>
+         <if test="departmentIds != null and !departmentIds.isEmpty()">
+            <where>
+                departmentid in
+                    <foreach collection="departmentIds" item="depId" open="(" close=")" separator=",">
+                        #{depId}
+                    </foreach>
+            </where>
+         </if>
+    </select>
+
+    <select id="getDepartmentMappings" resultMap="departmentMappingResultMap">
+        select crs_department_id, cp_department_id
+          from crs_cpi_dep_mapping
+    </select>
+
+    <delete id="persistDepartmentMappings">
+        begin
+            delete from crs_cpi_dep_mapping
+             where crs_department_id = #{crsDepartmentId};
+            <foreach collection="cpiDepartmentIds" item="cpiDepartmentId">
+                insert into crs_cpi_dep_mapping(crs_department_id, cp_department_id)
+                values(#{crsDepartmentId}, #{cpiDepartmentId});
+            </foreach>
+        end;
+    </delete>
+</mapper>

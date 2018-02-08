@@ -1,0 +1,16 @@
+<?page id="partners" docType="html" contentType="text/html;charset=UTF-8" ?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<zk>
+    <window border="none" height="100%"
+            apply="org.zkoss.bind.BindComposer"
+            viewModel="@id('vm') @init('ru.masterdm.crs.web.model.form.templates.TemplatesViewModel',type='IMPORT')"
+            contentStyle="overflow:auto">
+        <?component name="templates" inline="true" macroURI="/components/form/templates/templates.zul"?>
+        <caption>
+            <label value="${labels.layout_import_export_title}"/>
+            <label zclass="z-icon-angle-right"/>
+            <label value="${labels.templates_import_title}"/>
+        </caption>
+        <templates/>
+    </window>
+</zk>

@@ -1,0 +1,55 @@
+<window id="propertiesDialog" title="${labels.properties_dialog_window_title}"
+        border="none" width="600px"
+        apply="org.zkoss.bind.BindComposer"
+        viewModel="@id('vm') @init('ru.masterdm.crs.web.model.form.constructor.PropertiesDialogViewModel')"
+        position="center,top" closable="true" action="show: slideDown;hide: slideUp">
+    <vlayout>
+        <grid sclass="grid-form">
+            <columns>
+                <column hflex="2"/>
+                <column hflex="3"/>
+            </columns>
+            <rows>
+                <row>
+                    <label value="${labels.name_ru}"/>
+                    <textbox
+                            value="@load(vm.template.name.descriptionRu) @save(vm.template.name.descriptionRu, before={'save', 'refreshFormatsList'})"
+                            hflex="1" constraint="no empty"/>
+                </row>
+                <row>
+                    <label value="${labels.name_en}"/>
+                    <textbox
+                            value="@load(vm.template.name.descriptionEn) @save(vm.template.name.descriptionEn, before={'save', 'refreshFormatsList'})"
+                            hflex="1" constraint="no empty"/>
+                </row>
+                <row>
+                    <label value="${labels.properties_dialog_draft}"/>
+                    <checkbox hflex="1" checked="@load(vm.template.draft)" onCheck="@command('checkDraft', draft=self.checked)"/>
+                </row>
+                <row>
+                    <label value="${labels.properties_dialog_type}"/>
+                    <combobox readonly="true" model="@load(vm.types)" hflex="1" selectedItem="@bind(vm.template.type)"
+                              onChange="@command('refreshFormatsList')">
+                        <template name="model" var="type">
+                            <comboitem label="@load(vm.getTypeDescription(type))" value="@load(type)"/>
+                        </template>
+                    </combobox>
+                </row>
+                <row>
+                    <label value="${labels.properties_dialog_format}"/>
+                    <combobox readonly="true" model="@load(vm.formats)" hflex="1" selectedItem="@bind(vm.template.format)"
+                              disabled="true">
+                        <template name="model" var="format">
+                            <comboitem label="@load(format.name())" value="@load(format)"/>
+                        </template>
+                    </combobox>
+                </row>
+            </rows>
+        </grid>
+        <separator/>
+        <hbox width="100%" pack="end">
+            <button label="${labels.properties_dialog_save}" disabled="@load(null eq vm.template.type)"
+                    id="closeBtn" onClick="@command('save')" sclass="button-link"/>
+        </hbox>
+    </vlayout>
+</window>

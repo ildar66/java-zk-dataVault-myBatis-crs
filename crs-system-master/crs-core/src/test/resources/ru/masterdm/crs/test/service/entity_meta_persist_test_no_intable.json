@@ -1,0 +1,90 @@
+{
+  "key": "TEST_NO_INTABLE",
+  "name": {
+    "descriptionRu": "Тест сохранения сущьность без intable атрибутов",
+    "descriptionEn": "No intable attribute"
+  },
+  "types": ["DICTIONARY"],
+  "attributes": [
+    {
+      "key": "TEST_NO_INTABLE#STRINGML",
+      "name": {
+        "descriptionRu": "Строковый многоязычный",
+        "descriptionEn": "String multilang"
+      },
+      "type": "STRING",
+      "viewOrder": 0,
+      "multilang": true
+    },
+    {
+      "key": "TEST_NO_INTABLE#STRINGML2",
+      "name": {
+        "descriptionRu": "Строковый многоязычный ещё",
+        "descriptionEn": "String multilang again"
+      },
+      "type": "STRING",
+      "viewOrder": 0,
+      "multilang": true
+    },
+    {
+      "key": "TEST_NO_INTABLE#STRINGML3",
+      "name": {
+        "descriptionRu": "Строковый многоязычный ещё один",
+        "descriptionEn": "String multilang next again"
+      },
+      "type": "STRING",
+      "viewOrder": 0,
+      "multilang": true
+    },
+    {
+      "key": "TEST_NO_INTABLE#FILE",
+      "name": {
+        "descriptionRu": "Файл",
+        "descriptionEn": "File"
+      },
+      "type": "FILE",
+      "viewOrder": 1,
+      "multilang": true
+    },
+    {
+      "key": "TEST_NO_INTABLE#FILE2",
+      "name": {
+        "descriptionRu": "Файл ещё",
+        "descriptionEn": "File again"
+      },
+      "type": "FILE",
+      "viewOrder": 1,
+      "multilang": true
+    },
+    {
+      "key": "TEST_NO_INTABLE#TEXTML",
+      "name": {
+        "descriptionRu": "Текст многоязыковой",
+        "descriptionEn": "Text multilang"
+      },
+      "type": "TEXT",
+      "viewOrder": 1,
+      "multilang": true
+    },
+    {
+      "key": "TEST_NO_INTABLE#TEXTML2",
+      "name": {
+        "descriptionRu": "Текст многоязыковой ещё",
+        "descriptionEn": "Text multilang again"
+      },
+      "type": "TEXT",
+      "viewOrder": 1,
+      "multilang": true
+    },
+    {
+      "key": "TEST_NO_INTABLE#TEXTML3",
+      "name": {
+        "descriptionRu": "Текст многоязыковой ещё один",
+        "descriptionEn": "Text multilang next again"
+      },
+      "type": "TEXT",
+      "viewOrder": 1,
+      "multilang": true
+    }
+  ]
+}

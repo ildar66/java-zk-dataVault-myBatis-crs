@@ -1,0 +1,680 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ru.masterdm.crs.dao.calc.CalcDao">
+    <resultMap id="formulaResultMap" type="formula" autoMapping="true">
+        <id property="id" column="id"/>
+        <association property="formula" columnPrefix="data_" javaType="formulaData" autoMapping="true"/>
+        <association property="name" columnPrefix="mn_" javaType="multilangDescription" autoMapping="true"/>
+        <association property="comment" columnPrefix="mc_" javaType="multilangDescription" autoMapping="true"/>
+        <collection property="children" columnPrefix="c_" resultMap="formulaPairResultMap"/>
+    </resultMap>
+
+    <resultMap type="formulaDependencyPair" id="formulaPairResultMap" autoMapping="true">
+        <id property="id" column="id" />
+        <result property="left" column="attribute_name" />
+        <association property="right" resultMap="childFormulaResultMap" />
+    </resultMap>
+
+    <resultMap id="childFormulaResultMap" type="formula" autoMapping="true">
+        <id property="id" column="c_id"/>
+        <result property="hubId" column="c_hub_id"/>
+        <result property="key" column="c_key"/>
+    </resultMap>
+
+    <resultMap id="formulaResultMultiLinkDtoReferenceResultMap" type="formulaResultMultiLinkDtoReference" autoMapping="true">
+        <id property="calculationId" column="calc_id" />
+        <id property="formulaId" column="formula_id" />
+        <id property="calcProfileId" column="calc_profile_id" />
+    </resultMap>
+
+    <resultMap id="linkCalcFormulaResultBulkResultMap" type="formulaResultMultiLinkDto" autoMapping="true">
+        <id property="formulaResultId" column="calc_formula_result_id" />
+        <collection property="reference" ofType="formulaResultMultiLinkDtoReference" resultMap="formulaResultMultiLinkDtoReferenceResultMap" />
+    </resultMap>
+
+    <insert id="persistFormula" statementType="CALLABLE">
+        <choose>
+            <when test="formula.hubId == null">
+        declare
+            v_ldts timestamp := systimestamp;
+        begin
+            insert into crs_h_calc_formula(id, key, ldts)
+            values(crs_h_calc_formula_seq.nextval, upper(trim(#{formula.key})), v_ldts)
+            returning id
+            into #{formula.hubId, javaType=long, jdbcType = NUMERIC, mode = OUT};
+
+            insert into crs_s_calc_formula_desc(id, h_id, ldts, digest, name_ru, name_en, comment_ru, comment_en, type, eval_lang, result_type)
+            values(crs_s_calc_formula_desc_seq.nextval, crs_h_calc_formula_seq.currval, v_ldts, #{formula.digest},
+                   #{formula.name.descriptionRu}, #{formula.name.descriptionEn},
+                   #{formula.comment.descriptionRu}, #{formula.comment.descriptionEn}, #{formula.type}, #{formula.evalLang},
+                   #{formula.resultType})
+            returning id, ldts
+            into #{formula.id, javaType=long, jdbcType = NUMERIC, mode = OUT},
+                 #{formula.ldts, javaType=java.time.LocalDateTime, jdbcType=TIMESTAMP, mode=OUT};
+
+            insert into crs_s_calc_formula(id, h_id, ldts, digest, formula)
+            values(crs_s_calc_formula_seq.nextval, crs_h_calc_formula_seq.currval, v_ldts, #{formula.formula.digest}, #{formula.formula.data})
+            returning id, ldts, h_id
+            into #{formula.formula.id, javaType=long, jdbcType = NUMERIC, mode = OUT},
+                 #{formula.formula.ldts, javaType=java.time.LocalDateTime, jdbcType=TIMESTAMP, mode=OUT},
+                 #{formula.formula.hubId, javaType=long, jdbcType = NUMERIC, mode = OUT};
+
+            declare
+                v_l_f_id number;
+            begin
+            <foreach collection="formula.children" item="child" index="attributeName">
+                insert into crs_l_calc_formula(id, formula_id, formula_parent_id, ldts)
+                values(crs_l_calc_formula_seq.nextval, #{child.hubId}, crs_h_calc_formula_seq.currval, v_ldts)
+                returning id into v_l_f_id;
+
+                insert into crs_l_s_calc_formula(id, ldts, attribute_name, link_id)
+                select crs_l_s_calc_formula_seq.nextval, v_ldts, #{attributeName}, v_l_f_id
+                  from dual
+                 where #{child.library} = 0;
+            </foreach>
+                null; <!--if nothing at children-->
+            end;
+        end;
+            </when>
+            <otherwise>
+        declare
+            v_ldts                 timestamp := systimestamp;
+            v_digest               crs_s_calc_formula.digest%type;
+            v_all_formula_id_array crs_number_table;
+            v_error_links_exist    boolean := false;
+            v_formula_id           crs_s_calc_formula_desc.id%type := #{formula.id};
+            v_formula_ldts         crs_s_calc_formula_desc.ldts%type := #{formula.ldts};
+            v_formula_data_id      crs_s_calc_formula.id%type := #{formula.formula.id};
+            v_formula_data_ldts    crs_s_calc_formula.ldts%type := #{formula.formula.ldts};
+            v_error_formula_list   varchar2(4000);
+
+            type t_varchar_ia is table of varchar2(2000) index by varchar2(30);
+            v_child_names t_varchar_ia;
+
+            procedure clear_errors is
+                pragma autonomous_transaction;
+            begin
+                delete from crs_calc_formula_error_t;
+                commit;
+            end;
+
+            function add_error(p_child_formula_id number) return int is
+                pragma autonomous_transaction;
+                v_rowcount int;
+            begin
+                insert into crs_calc_formula_error_t(formula_id)
+                with t as (
+                    select formula_id, formula_parent_id, removed
+                      from (
+                        select cf.formula_id, cf.formula_parent_id, cf.removed,
+                               row_number() over (partition by cf.formula_id, cf.formula_parent_id order by cf.ldts desc) rn
+                          from crs_l_calc_formula cf
+                         where cf.ldts &lt;= v_ldts
+                      )
+                     where rn = 1
+                       and removed = 0
+                )
+                select distinct up.id
+                  from (
+                        /* up */
+                        select t.formula_parent_id id
+                          from t
+                         start with t.formula_id = #{formula.hubId}
+                       connect by prior t.formula_parent_id = t.formula_id
+                         union
+                        select #{formula.hubId} from dual
+                  ) up join
+                  (
+                        /* down */
+                        select t.formula_id id
+                          from t
+                         start with t.formula_parent_id = p_child_formula_id
+                       connect by prior t.formula_id = t.formula_parent_id
+                         union
+                        select p_child_formula_id from dual
+                  ) down on up.id = down.id;
+                v_rowcount := sql%rowcount;
+                commit;
+                return v_rowcount;
+            end;
+        begin
+            select digest into v_digest
+              from crs_s_calc_formula_desc
+             where id = #{formula.id};
+            if #{formula.digest} != v_digest then
+                insert into crs_s_calc_formula_desc(id, h_id, ldts, digest, name_ru, name_en, comment_ru, comment_en, type, eval_lang, result_type)
+                values(crs_s_calc_formula_desc_seq.nextval, #{formula.hubId}, v_ldts, #{formula.digest},
+                       #{formula.name.descriptionRu}, #{formula.name.descriptionEn},
+                       #{formula.comment.descriptionRu}, #{formula.comment.descriptionEn}, #{formula.type}, #{formula.evalLang},
+                       #{formula.resultType})
+                returning id, ldts
+                into v_formula_id, v_formula_ldts;
+            end if;
+            #{formula.id, javaType=long, jdbcType=NUMERIC, mode=OUT} := v_formula_id;
+            #{formula.ldts, javaType=java.time.LocalDateTime, jdbcType=TIMESTAMP, mode=OUT} := v_formula_ldts;
+
+            select digest into v_digest
+              from crs_s_calc_formula
+             where id = #{formula.formula.id};
+            if #{formula.digest} != v_digest then
+                insert into crs_s_calc_formula(id, h_id, ldts, digest, formula)
+                values(crs_s_calc_formula_seq.nextval, #{formula.hubId}, v_ldts, #{formula.formula.digest}, #{formula.formula.data})
+                returning id, ldts
+                into v_formula_data_id, v_formula_data_ldts;
+            end if;
+            #{formula.formula.id, javaType=long, jdbcType = NUMERIC, mode = OUT} := v_formula_data_id;
+            #{formula.formula.ldts, javaType=java.time.LocalDateTime, jdbcType=TIMESTAMP, mode=OUT} := v_formula_data_ldts;
+
+           <!-- must remove formula links before add check -->
+           insert into crs_l_calc_formula(id, formula_id, formula_parent_id, ldts, removed)
+           select crs_l_calc_formula_seq.nextval, t1.formula_id, #{formula.hubId}, v_ldts, 1
+             from (
+                   select t.formula_id, t.formula_parent_id, t.ldts
+                     from (
+                           select cf.*, row_number() over (partition by cf.formula_id order by cf.ldts desc) rn
+                             from crs_l_calc_formula cf
+                            where cf.ldts &lt;= v_ldts
+                              and cf.formula_parent_id = #{formula.hubId}
+                     ) t
+                    where t.rn = 1
+                      and t.removed = 0
+             ) t1
+            <choose>
+                <when test="formula.children.size() != 0">
+            where t1.formula_id not in (
+               <foreach collection="formula.children" item="child" separator=", ">#{child.hubId}</foreach>
+            )
+                </when>
+            </choose>
+            ;
+
+            <!-- insert new formula links and check, whether they may be added (errors are written into crs_calc_formula_error_t table) -->
+            <choose>
+                <when test="formula.children.size() != 0">
+            <!-- clear errors -->
+            clear_errors;
+
+            <!-- fill all formula children array -->
+            v_all_formula_id_array := crs_number_table(
+            <foreach collection="formula.children" item="child" separator=", ">
+                 #{child.hubId}
+            </foreach>
+            );
+            <foreach collection="formula.children" item="child" index="attributeName">
+            v_child_names('${child.hubId}') := '${attributeName}';
+            </foreach>
+
+            <!-- iterate over added formulas -->
+            for child in (
+                          select column_value
+                            from table(v_all_formula_id_array)
+                           minus
+                          select t.formula_id
+                            from (
+                                  select cf.*, row_number() over (partition by cf.formula_id order by cf.ldts desc) rn
+                                    from crs_l_calc_formula cf
+                                   where cf.ldts &lt;= v_ldts
+                                     and cf.formula_parent_id = #{formula.hubId}
+                            ) t
+                           where t.rn = 1
+                             and t.removed = 0
+            ) loop
+                <!-- insert errors if any exist -->
+                if add_error(child.column_value) > 0 and not v_error_links_exist then
+                    v_error_links_exist := true;
+                end if;
+
+                <!-- insert formula links if no errors found -->
+                if not v_error_links_exist then
+                    declare
+                        v_l_id number;
+                    begin
+                        insert into crs_l_calc_formula(id, formula_id, formula_parent_id, ldts)
+                        values (crs_l_calc_formula_seq.nextval, child.column_value, #{formula.hubId}, v_ldts)
+                        returning id into v_l_id;
+
+                        insert into crs_l_s_calc_formula(id, attribute_name, ldts, link_id)
+                        select crs_l_s_calc_formula_seq.nextval, v_child_names(to_char(child.column_value)), v_ldts, v_l_id
+                          from dual
+                         where #{child.library} = 0;
+                    end;
+                end if;
+            end loop;
+
+            if v_error_links_exist then
+                select 'Cyclic dependencies on formula links with ids: ' || listagg(formula_id, ', ') within group (order by null)
+                  into v_error_formula_list
+                  from crs_calc_formula_error_t;
+                raise_application_error(-20000, v_error_formula_list);
+            end if;
+                </when>
+            </choose>
+        end;
+            </otherwise>
+        </choose>
+    </insert>
+
+    <update id="removeFormula" statementType="CALLABLE">
+        declare
+            v_ldts timestamp := systimestamp;
+        begin
+            insert into crs_s_calc_formula_desc(id, h_id, removed, ldts, digest, name_ru, name_en, comment_ru, comment_en, type, eval_lang,result_type)
+            select crs_s_calc_formula_desc_seq.nextval, h_id, 1, v_ldts, digest, name_ru, name_en, comment_ru, comment_en, type, eval_lang, result_type
+              from crs_s_calc_formula_desc
+             where id = #{formula.id};
+            #{formula.id, javaType=long, jdbcType=NUMERIC, mode=OUT} := crs_s_calc_formula_desc_seq.currval;
+            #{formula.ldts, javaType=java.time.LocalDateTime, jdbcType=TIMESTAMP, mode=OUT} := v_ldts;
+            #{formula.removed, javaType=boolean, jdbcType=NUMERIC, mode=OUT} := 1;
+
+            insert into crs_s_calc_formula(id, h_id, removed, ldts, digest, formula)
+            select crs_s_calc_formula_seq.nextval, h_id, 1, v_ldts, digest, formula
+              from crs_s_calc_formula
+             where id = #{formula.formula.id};
+            #{formula.formula.id, javaType=long, jdbcType=NUMERIC, mode=OUT} := crs_s_calc_formula_seq.currval;
+            #{formula.formula.ldts, javaType=java.time.LocalDateTime, jdbcType=TIMESTAMP, mode=OUT} := v_ldts;
+            #{formula.formula.removed, javaType=boolean, jdbcType=NUMERIC, mode=OUT} := 1;
+
+            insert into crs_l_calc_formula(id, formula_id, formula_parent_id, ldts, removed)
+            select crs_l_calc_formula_seq.nextval, t.formula_id, t.formula_parent_id, v_ldts, 1
+              from (
+                    select formula_id, formula_parent_id, removed,
+                           row_number() over (partition by formula_id order by ldts desc) rn
+                      from crs_l_calc_formula
+                     where formula_id = #{formula.hubId}
+                    ) t
+             where t.rn = 1
+               and t.removed = 0;
+
+            insert into crs_l_calc_formula(id, formula_id, formula_parent_id, ldts, removed)
+            select crs_l_calc_formula_seq.nextval, t.formula_id, t.formula_parent_id, v_ldts, 1
+              from (
+                    select formula_id, formula_parent_id, removed,
+                           row_number() over (partition by formula_parent_id order by ldts desc) rn
+                      from crs_l_calc_formula
+                     where formula_parent_id = #{formula.hubId}
+                    ) t
+             where t.rn = 1
+               and t.removed = 0;
+        end;
+    </update>
+
+    <select id="getFormulaKeyById" resultType="string">
+        select key
+          from crs_h_calc_formula
+         where id = #{id}
+    </select>
+
+    <select id="getFormulaByKey" resultMap="formulaResultMap">
+        <![CDATA[
+        select *
+          from (select fd.id, fd.h_id hub_id, fd.key, fd.ldts, fd.removed, fd.digest, fd.type, fd.eval_lang, fd.result_type,
+                       fd.name_ru mn_description_ru, fd.name_en mn_description_en, fd.comment_ru mc_description_ru, fd.comment_en mc_description_en
+                  from (select fd.id, fd.h_id, h.key, fd.ldts, fd.removed, fd.digest, fd.type, fd.eval_lang, fd.result_type,
+                               fd.name_ru, fd.name_en, fd.comment_ru, fd.comment_en,
+                               row_number() over (partition by h.id order by fd.ldts desc) rn
+                          from crs_s_calc_formula_desc fd join crs_h_calc_formula h on fd.h_id = h.id
+                         where h.key = upper(trim(#{key}))
+                           and fd.ldts <= #{ldts}
+                       ) fd
+                 where fd.rn = 1
+               ) formula,
+               (select f.id data_id, f.ldts data_ldts, f.removed data_removed, f.digest data_digest, f.formula data_data
+                  from (select f.id, f.ldts, f.removed, f.digest, f.formula,
+                               row_number() over (partition by h.id order by f.ldts desc) rn
+                          from crs_s_calc_formula f join crs_h_calc_formula h on f.h_id = h.id
+                         where h.key = upper(trim(#{key}))
+                           and f.ldts <= #{ldts}
+                       ) f
+                 where f.rn = 1
+               ) formula_data left join (select t.id c_id, t.h_id c_hub_id, t.key c_key, t1.attribute_name c_attribute_name,
+                                                t.eval_lang c_eval_lang, t.result_type c_result_type, t.type c_type
+                                           from (select fd.id, fd.h_id, fd.key, fd.removed, fd.type, fd.eval_lang, fd.result_type, fd.link_id
+                                                   from (select fd.id, fd.h_id, h_child.key, lnk.removed, fd.type, fd.eval_lang, fd.result_type,
+                                                                lnk.id link_id,
+                                                                row_number() over (partition by h_child.id order by lnk.ldts desc) rn
+                                                           from crs_h_calc_formula h join crs_l_calc_formula lnk on lnk.formula_parent_id = h.id
+                                                                                     join crs_h_calc_formula h_child on lnk.formula_id = h_child.id
+                                                                                     join crs_s_calc_formula_desc fd on fd.h_id = h_child.id
+                                                          where h.key = upper(trim(#{key}))
+                                                            and fd.ldts <= #{ldts}
+                                                        ) fd
+                                                  where fd.rn = 1
+                                                    and fd.removed = 0
+                                                ) t left join (select t.attribute_name, t.link_id
+                                                                 from (select slcf.attribute_name, slcf.removed, slcf.link_id,
+                                                                              row_number() over(partition by slcf.link_id order by slcf.ldts desc) rn
+                                                                         from crs_l_s_calc_formula slcf
+                                                                        where slcf.ldts <= #{ldts}
+                                                                      ) t
+                                                                where t.rn = 1
+                                                                  and t.removed = 0
+                                                              ) t1 on t.link_id = t1.link_id
+                                        ) t on 1 = 1
+        ]]>
+    </select>
+
+    <select id="getFormulas" resultMap="formulaResultMap">
+        select fd.id, fd.h_id hub_id, fd.key, fd.ldts, fd.removed, fd.digest, fd.type, fd.eval_lang, fd.result_type,
+               fd.name_ru mn_description_ru, fd.name_en mn_description_en, fd.comment_ru mc_description_ru, fd.comment_en mc_description_en
+          from (select fd.id, fd.h_id, h.key, fd.ldts, fd.removed, fd.digest, fd.type, fd.eval_lang, fd.result_type,
+                       fd.name_ru, fd.name_en, fd.comment_ru, fd.comment_en,
+                       row_number() over (partition by h.id order by fd.ldts desc) rn
+                  from crs_s_calc_formula_desc fd join crs_h_calc_formula h on fd.h_id = h.id
+                                                                           and fd.ldts &lt;= #{ldts}
+        <if test="criteria != null and criteria.hubIdsAndLdts != null">
+            <foreach collection="criteria.hubIdsAndLdts" item="hubLdts" index="hubId" open=" join (select * from table(crs_pair_nts_a(crs_pair_nts("
+                     separator="),crs_pair_nts(" close=")))) t on t.n = fd.h_id and fd.ldts &lt;= t.ts">
+                       #{hubId}, #{hubLdts}
+            </foreach>
+        </if>
+        <where>
+            <if test="criteria != null and criteria.hubIds != null">
+                <foreach item="id" collection="criteria.hubIds" open=" fd.h_id in (" separator="," close=")">
+                       #{id}
+                </foreach>
+            </if>
+            <if test="criteria != null and !criteria.strictLatestActualRecord and criteria.whereDefined">
+              and (${criteria.where.text})
+            </if>
+        </where>
+               ) fd
+         where rn = 1
+           and removed = 0
+        <if test="criteria != null and criteria.strictLatestActualRecord and criteria.whereDefined">
+           and (${criteria.where.text})
+        </if>
+        <if test="criteria != null and criteria.orderDefined">
+         order by ${criteria.order.text}
+        </if>
+    </select>
+
+    <select id="getCyclicDependencyFormulas" resultMap="formulaResultMap">
+        <![CDATA[
+        select *
+          from (
+            select fd.id, fd.h_id hub_id, fd.key, fd.ldts, fd.removed, fd.digest, fd.type, fd.eval_lang, fd.result_type,
+                   fd.name_ru mn_description_ru, fd.name_en mn_description_en, fd.comment_ru mc_description_ru, fd.comment_en mc_description_en, null c_attribute_name
+              from (
+                select fd.id, fd.h_id, h.key, fd.ldts, fd.removed, fd.digest, fd.type, fd.eval_lang, fd.result_type,
+                       fd.name_ru, fd.name_en, fd.comment_ru, fd.comment_en,
+                       row_number() over (partition by h.id order by fd.ldts desc) rn
+                  from crs_s_calc_formula_desc fd join crs_h_calc_formula h on fd.h_id = h.id
+                                                  join crs_calc_formula_error_t le on fd.h_id = le.formula_id
+                 where fd.ldts <= systimestamp
+              ) fd
+             where fd.rn = 1
+          )
+        ]]>
+    </select>
+
+    <select id="getFormulaFlattenedTree" resultMap="formulaResultMap">
+        <![CDATA[
+        select formula.id, formula.hub_id, formula.key, formula.type, formula.eval_lang, formula.result_type,
+               formula_data.data_id, formula_data.data_data,
+               t.c_id, t.c_hub_id, t.c_key, t.c_attribute_name
+          from (
+            select fd.id, fd.h_id hub_id, fd.key, fd.type, fd.eval_lang, fd.result_type
+              from (
+                select fd.id, fd.h_id, h.key, fd.ldts, fd.removed, fd.digest, fd.type, fd.eval_lang, fd.result_type,
+                       fd.name_ru, fd.name_en, fd.comment_ru, fd.comment_en,
+                       row_number() over (partition by h.id order by fd.ldts desc) rn
+                  from crs_s_calc_formula_desc fd join crs_h_calc_formula h on fd.h_id = h.id
+                 where fd.ldts <= #{actualityTs}
+              ) fd
+             where fd.rn = 1
+          ) formula join
+          (
+            select f.id data_id, f.hub_id, f.formula data_data
+              from (
+                select f.id, f.h_id hub_id, f.ldts, f.removed, f.digest, f.formula,
+                       row_number() over (partition by h.id order by f.ldts desc) rn
+                  from crs_s_calc_formula f join crs_h_calc_formula h on f.h_id = h.id
+                 where f.ldts <= #{actualityTs}
+              ) f
+             where f.rn = 1
+          ) formula_data on formula.hub_id = formula_data.hub_id left join
+          (
+            select t.id c_id, t.hub_id, t.h_id c_hub_id, t.key c_key, t1.attribute_name c_attribute_name
+              from (
+                select fd.id, fd.hub_id, fd.h_id, fd.key, fd.removed, fd.link_id
+                  from (
+                    select fd.id, h.id hub_id, fd.h_id, h_child.key, lnk.removed, lnk.id link_id,
+                           row_number() over (partition by h_child.id, h.id order by lnk.ldts desc) rn
+                      from crs_h_calc_formula h join crs_l_calc_formula lnk on lnk.formula_parent_id = h.id
+                                                join crs_h_calc_formula h_child on lnk.formula_id = h_child.id
+                                                join crs_s_calc_formula_desc fd on fd.h_id = h_child.id
+                     where fd.ldts <= #{actualityTs}
+                  ) fd
+                 where fd.rn = 1
+                   and fd.removed = 0
+              ) t left join (
+                    select t.attribute_name, t.link_id, t.removed
+                      from (
+                            select slcf.attribute_name, slcf.removed, slcf.link_id,
+                                   row_number() over(partition by slcf.link_id order by slcf.ldts desc) rn
+                              from crs_l_s_calc_formula slcf
+                             where slcf.ldts <= #{actualityTs}
+                      ) t
+                     where t.rn = 1
+                       and t.removed = 0
+              ) t1 on t.link_id = t1.link_id
+          ) t on t.hub_id = formula.hub_id join
+          (
+            select t.formula_id
+              from (
+                    select formula_id, formula_parent_id
+                      from (
+                        select cf.formula_id, cf.formula_parent_id, cf.removed,
+                               row_number() over (partition by cf.formula_id, cf.formula_parent_id order by cf.ldts desc) rn
+                          from crs_l_calc_formula cf
+                         where cf.ldts <= #{actualityTs}
+                      )
+                     where rn = 1
+                       and removed = 0
+              ) t
+             start with t.formula_parent_id = #{formula.hubId}
+           connect by prior t.formula_id = t.formula_parent_id
+             union
+            select #{formula.hubId} from dual
+          ) fids on fids.formula_id = formula.hub_id
+        ]]>
+    </select>
+
+    <update id="prepareFilteredFlattenedFormulaTrees" statementType="CALLABLE">
+        declare
+            v_filter_formula_ids crs_number_table;
+        begin
+            delete from crs_calc_formula_tree_t;
+
+            select fd.h_id
+              bulk collect into v_filter_formula_ids
+              from (
+                   select fd.h_id, fd.ldts, fd.removed, fd.name_ru, fd.name_en, fd.type, fd.eval_lang, h.key,
+                          row_number() over (partition by fd.h_id order by fd.ldts desc) rn
+                     from crs_s_calc_formula_desc fd join crs_h_calc_formula h on fd.h_id = h.id
+                    where fd.ldts &lt;= #{ldts}
+              ) fd
+             where fd.rn = 1
+               and fd.removed = 0
+        <if test="calculation != null">
+               and exists(select 1
+                            from (select m.calc_formula_id,
+                                         m.removed,
+                                         row_number() over (partition by m.calc_formula_id
+                                                                order by m.ldts desc) rn$
+                                    from crs_l_calc_model_formula m
+                                   where m.calc_model_id = #{calculation.model.hubId}
+                                     and m.ldts &lt;= #{calculation.model.ldts}) m
+                           where m.rn$ = 1
+                             and m.removed = 0
+                             and m.calc_formula_id = fd.h_id
+                         )
+       </if>
+       <if test="criteria != null and criteria.whereDefined and calculation == null">
+               and (${criteria.where.text})
+       </if>
+            ;
+
+            if sql%rowcount = 0 then
+                return;
+            end if;
+
+            merge into crs_calc_formula_tree_t t
+            using (
+                   with formulae as (
+                            /* all active formulae */
+                            select fd.id, fd.h_id, fd.name_ru, fd.name_en, fd.type, fd.key, fd.eval_lang
+                              from (
+                                select fd.id, fd.h_id, fd.ldts, fd.removed, fd.name_ru, fd.name_en, fd.type, h.key, fd.eval_lang,
+                                       row_number() over (partition by fd.h_id order by fd.ldts desc) rn
+                                  from crs_s_calc_formula_desc fd join crs_h_calc_formula h on fd.h_id = h.id
+                                 where fd.ldts &lt;= #{ldts}
+                              ) fd
+                             where fd.rn = 1
+                               and fd.removed = 0
+                        ),
+                        formulae_link as (
+                            /* all active formula links */
+                            select lnk.formula_id, lnk.formula_parent_id
+                              from (
+                                    select lf.formula_id, lf.formula_parent_id, lf.removed,
+                                           row_number() over (partition by lf.formula_id, lf.formula_parent_id order by lf.ldts desc) rn
+                                      from crs_l_calc_formula lf
+                                     where lf.ldts &lt;= #{ldts}
+                              ) lnk
+                            where lnk.rn = 1
+                              and lnk.removed = 0
+                        )
+                   select f.id, f.h_id, f.name_ru, f.name_en, f.type, f.key, f.eval_lang, f2.c_id, f2.c_h_id
+                     from (
+                           /* flattened formulae tree ids */
+                           select formulae_link.formula_parent_id, formulae_link.formula_id
+                             from formulae_link join formulae on formulae_link.formula_parent_id = formulae.h_id
+        <choose>
+            <when test="calculation == null">
+                            start with formulae_link.formula_id in (select z.column_value
+                                                                      from table(v_filter_formula_ids) z)
+                          connect by prior formulae_link.formula_parent_id = formulae_link.formula_id
+            </when>
+            <otherwise>
+                            start with formulae_link.formula_parent_id in (select z.column_value
+                                                                             from table(v_filter_formula_ids) z)
+                          connect by formulae_link.formula_parent_id = prior formulae_link.formula_id
+            </otherwise>
+        </choose>
+                            union
+                           select z.column_value, null
+                             from table(v_filter_formula_ids) z
+                     ) ids join formulae f on f.h_id = ids.formula_parent_id
+                           left join (select f2.id c_id, f2.h_id c_h_id
+                                        from formulae f2) f2 on f2.c_h_id = ids.formula_id
+
+       <if test="criteria != null and criteria.whereDefined">
+           <where>
+               (${criteria.where.text})
+           </where>
+       </if>
+            ) i_data on (t.hub_id = i_data.h_id and nvl(t.c_hub_id, -1) = nvl(i_data.c_h_id, -1))
+            when not matched then
+                insert (t.id, t.hub_id, t.c_id, t.c_hub_id, t.name_ru, t.name_en, t.type, t.key, t.eval_lang)
+                values(i_data.id, i_data.h_id, i_data.c_id, i_data.c_h_id, i_data.name_ru, i_data.name_en, i_data.type, i_data.key, i_data.eval_lang);
+
+            delete from crs_calc_formula_tree_t t0
+             where t0.c_id is null
+               and (
+                    select count(1)
+                      from crs_calc_formula_tree_t t1
+                     where t1.id = t0.id
+               ) > 1;
+        end;
+    </update>
+
+    <select id="getFilteredFlattenedFormulaTrees" resultMap="formulaResultMap">
+            select t.id, t.hub_id, t.type, t.key, t.eval_lang,
+                   t.name_ru mn_description_ru, t.name_en mn_description_en,
+                   t.c_id, t.c_hub_id, ch.key c_key,
+                   (select d.result_type
+                      from crs_s_calc_formula_desc d
+                     where d.id = t.id) result_type
+              from crs_calc_formula_tree_t t left outer join crs_h_calc_formula ch on ch.id = t.c_hub_id
+        <if test="criteria != null and criteria.orderDefined">
+             order by ${criteria.order.text}
+        </if>
+    </select>
+
+    <select id="getFormulaIdByKey" resultType="long">
+        select id
+          from crs_h_calc_formula
+         where key = upper(trim(#{key}))
+    </select>
+
+    <select id="isCalculationCalculated" resultType="boolean">
+        select c.calculated
+          from crs_s_calc c
+         where c.id = #{id}
+    </select>
+
+    <select id="isCalculationPublished" resultType="boolean">
+        select c.published
+          from crs_s_calc c
+         where c.id = #{id}
+    </select>
+
+    <select id="getModelLastVersion" resultType="long">
+        select e.version from (
+            select ms.version,
+                   row_number() over (partition by ms.h_id order by ms.ldts desc) "$rn"
+            from crs_h_calc_model mh join crs_s_calc_model ms on mh.id = ms.h_id
+                                                             and ms.ldts &lt;= #{ldts}
+            where ms.published = 1
+              and mh.key = #{key}
+        ) e
+        where e."$rn" = 1
+    </select>
+
+
+    <select id="isModelPublished" resultType="boolean">
+        select e.published from (
+            select ms.published,
+                   row_number() over (partition by ms.h_id order by ms.ldts desc) "$rn"
+            from crs_s_calc_model ms
+            where ms.ldts &lt;= #{ldts}
+              and ms.h_id = #{hubId}
+        ) e
+        where e."$rn" = 1
+    </select>
+
+    <insert id="writeLinkCalcFormulaResult">
+        insert into crs_l_calc_formula_result (id, ldts, removed, calc_id, formula_id, calc_formula_result_id, calc_profile_id)
+        select crs_l_calc_formula_result_seq.nextval, #{ldts}, #{removed}, #{calculation.hubId}, #{formula.hubId}, #{formulaResult.hubId}, #{profile.hubId}
+          from dual
+         where not exists(
+            select 1
+              from (select id, ldts, calc_id, formula_id, calc_formula_result_id, removed,
+                           row_number() over (partition by calc_id, formula_id, calc_formula_result_id, calc_profile_id order by ldts desc) rn$
+                      from crs_l_calc_formula_result
+                     where calc_id = #{calculation.hubId}
+                       and formula_id = #{formula.hubId}
+                       and calc_formula_result_id = #{formulaResult.hubId}
+                       and calc_profile_id = #{profile.hubId}
+                       and ldts &lt;= #{ldts})
+             where rn$ = 1
+               and removed = #{removed})
+    </insert>
+
+    <select id="readLinkCalcFormulaResult" resultMap="linkCalcFormulaResultBulkResultMap">
+        select *
+          from (select id, ldts, calc_id, formula_id, calc_formula_result_id, calc_profile_id, removed,
+                       row_number() over (partition by calc_id, formula_id, calc_profile_id order by ldts desc) rn$
+                  from crs_l_calc_formula_result
+                 where (calc_id, formula_id, calc_profile_id) in
+        <foreach collection="params" item="param" open="((" separator="), (" close="))">
+                       #{param.calculation.hubId}, #{param.formula.hubId}, #{param.profile.hubId}
+        </foreach>
+                   and ldts &lt;= #{ldts})
+         where rn$ = 1
+           and removed = 0
+    </select>
+</mapper>

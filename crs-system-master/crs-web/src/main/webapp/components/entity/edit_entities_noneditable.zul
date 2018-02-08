@@ -1,0 +1,67 @@
+<zk>
+    <if test="@init(innerEach.type eq 'BOOLEAN')">
+        <checkbox disabled="true" checked="@load(innerItem.entity.getAttribute(innerEach.key).value)"/>
+    </if>
+    <if test="@init(innerEach.type eq 'STRING' and not innerEach.multilang)">
+        <label value="@load(innerItem.entity.getAttribute(innerEach.key).value)"
+               tooltiptext="@load(innerItem.entity.getAttribute(innerEach.key).value)"/>
+    </if>
+    <if test="@init(innerEach.type eq 'STRING' and innerEach.multilang)">
+        <label value="@load(innerItem.entity.getAttribute(innerEach.key).getValue(sessionScope.userProfile.locale))"
+               tooltiptext="@load(innerItem.entity.getAttribute(innerEach.key).getValue(sessionScope.userProfile.locale))"/>
+    </if>
+    <if test="@init(innerEach.type eq 'TEXT')">
+        <hbox hflex="1">
+            <button autodisable="self" iconSclass="z-icon-asterisk"
+                    tooltiptext="@init(labels.view_button)" sclass="button-icon"
+                    onClick="@command('editEntityText', entityStatus=innerItem, attributeMetaKey=innerEach.key, isEdit=(not (sessionScope.dataSlice.getDataSliceDateSet(vmcalc.entityMeta.key) or not editable)))"/>
+            <if test="@init(not innerItem.entity.getAttribute(innerEach.key).meta.multilang)">
+                <label value="@load(innerItem.entity.getAttribute(innerEach.key).value)" hflex="1"
+                       tooltiptext="@load(innerItem.entity.getAttribute(innerEach.key).value)" maxlength="10"/>
+            </if>
+            <if test="@init(innerItem.entity.getAttribute(innerEach.key).meta.multilang)">
+                <label value="@load(innerItem.entity.getAttribute(innerEach.key).getValue(sessionScope.userProfile.locale))"
+                       hflex="1"
+                       tooltiptext="@load(innerItem.entity.getAttribute(innerEach.key).getValue(sessionScope.userProfile.locale))"
+                       maxlength="10"/>
+            </if>
+        </hbox>
+    </if>
+    <if test="@init(innerEach.type eq 'FILE')">
+        <a label="@load(innerItem.entity.getAttribute(innerEach.key).value)"
+           onClick="@command('fileDownload', fileInfoAttribute=innerItem.entity.getAttribute(innerEach.key))"
+           sclass="download_link" visible="@load(not innerItem.entity.getAttribute(innerEach.key).linkRemoved)"
+           autodisable="self"/>
+    </if>
+    <if test="@init(innerEach.type eq 'NUMBER')">
+        <label value="@load(innerItem.entity.getAttribute(innerEach.key).value)"/>
+    </if>
+    <if test="@init(innerEach.type eq 'DATE')">
+        <label value="@load(innerItem.entity.getAttribute(innerEach.key).value) @converter('ru.masterdm.crs.web.util.converter.DateFormatConverter')"/>
+    </if>
+    <if test="@init(innerEach.type eq 'DATETIME')">
+        <label value="@load(innerItem.entity.getAttribute(innerEach.key).value) @converter('ru.masterdm.crs.web.util.converter.DateTimeFormatConverter')"/>
+    </if>
+    <if test="@init(innerEach.type eq 'REFERENCE')">
+        <hbox hflex="1">
+            <button autodisable="self" iconSclass="z-icon-link"
+                    tooltiptext="@init(labels.view_button)" sclass="button-icon"
+                    onClick="@command('editEntityRef', entityStatus=innerItem, attributeMetaKey=innerEach.key, isEdit=(not (sessionScope.dataSlice.getDataSliceDateSet(vmcalc.entityMeta.key) or not editable)))"
+                    visible="@init(not vmcalc.referencesAttributeMetaKeys.contains(innerEach.key))"
+            />
+
+            <button autodisable="self" iconSclass="z-icon-link"
+                    tooltiptext="@init(labels.view_button)" sclass="button-icon"
+                    onClick="@command('editEntityReferences', entityStatus=innerItem, attributeMetaKey=innerEach.key, editable=(not (sessionScope.dataSlice.getDataSliceDateSet(vmcalc.entityMeta.key) or not editable)))"
+                    visible="@init(vmcalc.referencesAttributeMetaKeys.contains(innerEach.key))"/>
+
+            <vbox>
+                <label forEach="${innerItem.entity.getAttribute(innerEach.key).value}" forEachBegin="0" forEachEnd="4"
+                       value="${vmcalc.getAttributeValue(each)}"/>
+                <if test="@init(innerItem.entity.getAttribute(each.key).value.size() > 5)">
+                    <label value="..."/>
+                </if>
+            </vbox>
+        </hbox>
+    </if>
+</zk>

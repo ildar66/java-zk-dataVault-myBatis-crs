@@ -1,0 +1,33 @@
+<window title="@init(vm.exceptionEnvelope.hideStackTrace ? labels.messagebox_validation : labels.exception_default_message)"
+        viewModel="@id('vm') @init('ru.masterdm.crs.web.model.ExceptionViewModel')"
+        width="@init(vm.exceptionEnvelope.hideStackTrace ? '' : '700px')"
+        border="normal" contentStyle="overflow:auto;" mode="modal" closable="true"
+        onCancel="@command('closeDialogWindow')"
+        sclass="error_window" sizable="true"
+        maximizable="true"
+        xmlns:n="native">
+    <div sclass="z-messagebox-icon ${vm.exceptionEnvelope.hideStackTrace ? 'z-messagebox-exclamation' : 'z-messagebox-error'} error_block error_block_icon" />
+    <div sclass="error_block">
+        <n:pre><label value="@init(vm.exceptionEnvelope.message)" /></n:pre>
+
+        <span visible="@load(not vm.exceptionEnvelope.hideStackTrace)">
+            <separator/>
+            <label value="@init(labels.exception_description_view) "/>
+            <a label="@init(labels.exception_reload_page)" onClick="@command('reload')" autodisable="self" sclass="error_link"/><label value=","/>
+            <a label="@init(labels.exception_description_download)" onClick="@command('downloadStackTrace')" autodisable="self" sclass="error_link"/>
+            <label value="@init(labels.exception_description_or)" />
+            <n:a href="#" onclick="jQuery('#stacktrace').toggle()" class="error_link"><label value="@init(labels.exception_description_link)"/></n:a><label value="."/>
+        </span>
+    </div>
+    <div sclass="error_block">
+        <separator/>
+        <n:div id="stacktrace">
+            <n:pre><label value="@init(vm.stackTrace)" /></n:pre>
+        </n:div>
+    </div>
+
+    <div align="center" sclass="error_ok">
+        <separator/>
+        <button label="ОК" onClick="@command('closeDialogWindow')"/>
+    </div>
+</window>

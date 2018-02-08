@@ -1,0 +1,166 @@
+<zk>
+    <window border="none" height="100%"
+            contentStyle="overflow:auto"
+            apply="org.zkoss.bind.BindComposer"
+            viewModel="@id('vm') @init('ru.masterdm.crs.web.model.form.constructor.ConstructorViewModel')">
+        <caption>
+            <label value="@init(labels.layout_import_export_title)"/>
+            <label zclass="z-icon-angle-right"/>
+            <label value="@init(vm.parentPageTitle)" style="cursor:pointer" onClick="@command('navigateTemplates')"/>
+            <label zclass="z-icon-angle-right"/>
+            <label value="@load(vm.template.name.getDescription(sessionScope.userProfile.locale))"/>
+            <toolbar>
+                <toolbarbutton label="@init(labels.constructor_menu_file_save)" iconSclass="z-icon-save" onClick="@command('save')"
+                               disabled="@load(not nav.isPermitted('FORM_TEMPLATE','EDIT'))"/>
+                <toolbarbutton label="@init(labels.constructor_menu_file_book_new)" iconSclass="z-icon-file-o" onClick="@command('newBook')"
+                               visible="@load('EXCEL' eq vm.template.format.name())"/>
+                <toolbarbutton label="@init(labels.constructor_menu_file_book_open)" iconSclass="z-icon-folder-open-o"
+                               visible="@load('EXCEL' eq vm.template.format.name())" upload="true,maxsize=5120,accept=.xls|.xlsx|.xlsm"
+                               onUpload="@command('openBook')"/>
+                <toolbarbutton label="@init(labels.constructor_menu_file_properties)" iconSclass="z-icon-gear"
+                               onClick="@command('openProperties')"/>
+                <toolbarbutton label="@init(labels.constructor_menu_file_debug)" iconSclass="z-icon-play" popup="debugPopup, type=toggle"/>
+                <toolbarbutton label="@init(labels.constructor_menu_file_exit)" iconSclass="z-icon-close"
+                               onClick="@command('navigateTemplates')"/>
+                <menupopup id="debugPopup">
+                    <menuitem label="@init(labels.constructor_menu_file_debug_export)" onClick="@command('debugExport')"
+                              if="${vm.template.type.name() eq 'EXPORT' or vm.template.type.name() eq 'FORM'}"/>
+                    <menuitem label="@init(labels.constructor_menu_file_debug_import)" onClick="@command('debugImport')"
+                              if="${vm.template.type.name() eq 'IMPORT' or vm.template.type.name() eq 'FORM'}"/>
+                    <menuitem label="@init(labels.constructor_menu_file_debug_clean)" onClick="@command('cleanForm')"/>
+                </menupopup>
+
+            </toolbar>
+        </caption>
+
+        <borderlayout>
+            <west border="none" flex="true" width="17%" visible="@load(vm.template)" splittable="true">
+                <borderlayout>
+                    <north height="40%" splittable="true">
+                        <vlayout vflex="1">
+                            <tree vflex="1">
+                                <custom-attributes org.zkoss.zul.nativebar="false"/>
+                                <auxhead>
+                                    <auxheader>
+                                        <button label="@init(labels.constructor_button_add)" iconSclass="z-icon-plus-circle"
+                                                popup="objectsPopup, type=toggle" sclass="button-link"
+                                                onClick="@command('setContextObject',mo=null)"/>
+                                        <menupopup id="objectsPopup">
+                                            <menuitem label="@init(labels.constructor_object_calculation)"
+                                                      onClick="@command('newMappingObject',key = 'CALC')"/>
+                                            <menu label="@init(labels.constructor_object_dictionary)">
+                                                <menupopup children="@load(vm.getEntityMetaList('DICTIONARY')) @template('objectPopup')"/>
+                                            </menu>
+                                        </menupopup>
+                                    </auxheader>
+                                </auxhead>
+                                <treecols>
+                                    <treecol/>
+                                </treecols>
+                                <treechildren children="@bind(vm.template.mapper.objects) @template('treeitem')"/>
+                                <template name="treeitem" var="mo">
+                                    <treeitem>
+                                        <treerow>
+                                            <treecell label="@load(mo.name)" context="treeContext"
+                                                      onRightClick="@command('setContextObject',mo=mo)"
+                                                      onDoubleClick="@command('editObject',mo = mo)"/>
+                                        </treerow>
+                                        <treechildren if="${mo.objects.size()>0}" children="@load(mo.objects) @template('treeitem')"/>
+                                    </treeitem>
+                                </template>
+                            </tree>
+                            <template name="objectPopup">
+                                <menuitem label="@load(each.key)"
+                                          onClick="@command('newMappingObject',key = each.key)"/>
+                            </template>
+                            <menupopup id="treeContext">
+                                <menu label="@init(labels.constructor_objects_context_add)"
+                                      visible="@load(vm.contextObject.entityMeta.key eq 'CALC')"
+                                      iconSclass="z-icon-plus-circle">
+                                    <menupopup>
+                                        <menu label="@init(labels.constructor_object_form)">
+                                            <menupopup children="@load(vm.getEntityMetaList('INPUT_FORM')) @template('objectPopup')"/>
+                                        </menu>
+                                        <menu label="@init(labels.constructor_object_classifier)">
+                                            <menupopup children="@load(vm.getEntityMetaList('CLASSIFIER')) @template('objectPopup')"/>
+                                        </menu>
+                                        <menuitem if="${vm.template.type.name() eq 'EXPORT'}" label="@init(labels.constructor_object_formula)"
+                                                  onClick="@command('newMappingObject',key = 'CALC_FORMULA_RESULT')"/>
+                                    </menupopup>
+                                </menu>
+                                <menuitem label="@init(labels.constructor_objects_context_edit)"
+                                          onClick="@command('editObject',mo = vm.contextObject)"
+                                          iconSclass="z-icon-edit"/>
+                                <menuitem label="@init(labels.constructor_objects_context_clone)" onClick="@command('cloneObjectDialog')"/>
+                                <menuitem label="@init(labels.constructor_objects_context_delete)"
+                                          onClick="@command('deleteObject',mo = vm.contextObject)"
+                                          iconSclass="z-icon-remove"/>
+                            </menupopup>
+                        </vlayout>
+                    </north>
+                    <center>
+                        <vlayout vflex="1">
+                            <tree vflex="1" onSelect="@command('cellSearch')">
+                                <custom-attributes org.zkoss.zul.nativebar="false"/>
+                                <treecols>
+                                    <treecol label="@init(labels.constructor_fields)"/>
+                                </treecols>
+                                <treechildren children="@bind(vm.fields) @template('treefields')"/>
+                                <template name="treefields" var="field">
+                                    <treeitem open="false" value="@load(field)">
+                                        <treerow>
+                                            <treecell label="@load(vm.getFieldNameWithObject(field))" draggable="false"
+                                                      iconSclass="@load(field.key ? 'z-icon-key' : 'z-icon-edit')"/>
+                                        </treerow>
+                                        <treechildren unless="${field.range eq null}">
+                                            <treeitem>
+                                                <treerow>
+                                                    <treecell>
+                                                        <label value="@load(field.range.ref)" sclass="label-path"/>
+                                                    </treecell>
+                                                </treerow>
+                                            </treeitem>
+                                        </treechildren>
+                                    </treeitem>
+                                </template>
+                            </tree>
+                        </vlayout>
+                    </center>
+                </borderlayout>
+            </west>
+
+            <center border="none" flex="true">
+                <vlayout>
+                    <spreadsheet id="ss" book="@bind(vm.book)" visible="@load('EXCEL' eq vm.template.format.name())"
+                                 onRightClick="@command('setContextFields')"
+                                 hflex="1" vflex="1" showToolbar="false" showFormulabar="false" maxrows="256"
+                                 showSheetbar="true" context="popupMap"/>
+                    <menupopup id="popupMap">
+                        <menu label="@init(labels.constructor_ss_context_bind)">
+                            <menupopup children="@bind(vm.fieldsObjects)">
+                                <template name="children" var="mo">
+                                    <menu label="@load(mo[0].mappingObject.name)" visible="@load(vm.fields)">
+                                        <menupopup children="@bind(mo)">
+                                            <template name="children" var="field">
+                                                <menuitem label="@load(vm.getFieldLabel(field))" onClick="@command('map',field = field)"/>
+                                            </template>
+                                        </menupopup>
+                                    </menu>
+                                </template>
+                            </menupopup>
+                        </menu>
+                        <menu label="@init(labels.constructor_ss_context_unbind)" visible="@load(vm.contextFields.size()>0)">
+                            <menupopup children="@bind(vm.contextFields)">
+                                <template name="children" var="field">
+                                    <menuitem label="@load(vm.getFieldNameWithObject(field))"
+                                              onClick="@command('unmap',field = field)"/>
+                                </template>
+                            </menupopup>
+                        </menu>
+                    </menupopup>
+                </vlayout>
+
+            </center>
+        </borderlayout>
+    </window>
+</zk>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <bean id="securityRebuildJobDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <property name="targetObject" ref="securityService"/>
+        <property name="targetMethod" value="rebuildAllSecurity"/>
+        <property name="concurrent" value="false"/>
+    </bean>
+
+    <bean id="securityRebuildTrigger" class="org.springframework.scheduling.quartz.SimpleTriggerFactoryBean">
+        <property name="jobDetail" ref="securityRebuildJobDetail"/>
+        <!-- 1 minute -->
+        <property name="startDelay" value="60000"/>
+        <!-- repeat every 30 minutes -->
+        <property name="repeatInterval" value="1800000"/>
+    </bean>
+
+    <bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+        <property name="triggers">
+            <list>
+                <ref bean="securityRebuildTrigger"/>
+            </list>
+        </property>
+        <property name="quartzProperties">
+            <map>
+                <entry key="org.quartz.threadPool.threadCount" value="1"/>
+            </map>
+        </property>
+    </bean>
+
+</beans>

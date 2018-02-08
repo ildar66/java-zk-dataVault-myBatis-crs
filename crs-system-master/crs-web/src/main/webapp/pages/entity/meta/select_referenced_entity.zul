@@ -1,0 +1,59 @@
+<zk>
+    <window title="${labels.select_referenced_entity_title}" apply="org.zkoss.bind.BindComposer"
+            viewModel="@id('vm') @init('ru.masterdm.crs.web.model.entity.meta.SelectReferencedEntityViewModel')"
+            position="center,center" closable="true" width="60%"
+            action="show: slideDown;hide: slideUp" onCancel="@command('detachWindow')" contentStyle="overflow:auto;">
+        <vlayout>
+            <hbox>
+                <vbox>
+                    <label value="@init(labels.select_referenced_entities)" sclass="label-header"/>
+                    <separator/>
+                    <hbox hflex="1">
+                        <span sclass="z-icon-filter"/>
+                        <textbox instant="true" hflex="1" value="@bind(vm.entityMetaFilter)" onChange="@command('changeEntityMetaFilter')"/>
+                    </hbox>
+                    <listbox hflex="1" vflex="true" rows="10" model="@load(vm.entityMetaList)" sclass="entities-list">
+                        <custom-attributes org.zkoss.zul.nativebar="false"/>
+                        <listhead>
+                            <listheader label="${labels.key}"/>
+                            <listheader label="${labels.name}"/>
+                        </listhead>
+                        <template name="model">
+                            <listitem onClick="@command('selectEntityMeta', entityMeta=each)">
+                                <listcell label="${each.key}"/>
+                                <listcell label="${each.name.getDescription(sessionScope.userProfile.locale)}"/>
+                            </listitem>
+                        </template>
+                    </listbox>
+                </vbox>
+                <vbox>
+                    <label value="@init(labels.select_referenced_attributes)" sclass="label-header"/>
+                    <separator/>
+                    <hbox hflex="1">
+                        <span sclass="z-icon-filter"/>
+                        <textbox instant="true" hflex="1" value="@bind(vm.attributeMetaFilter)" onChange="@command('changeAttributeMetaFilter')"/>
+                    </hbox>
+                    <listbox hflex="1" vflex="true" rows="10" model="@load(vm.attributes)" sclass="entities-list">
+                        <custom-attributes org.zkoss.zul.nativebar="false"/>
+                        <listhead>
+                            <listheader label="${labels.key}"/>
+                            <listheader label="${labels.name}"/>
+                        </listhead>
+                        <template name="model">
+                            <listitem onClick="@command('selectAttributeMeta', attributeMeta=each)">
+                                <listcell label="@load(each.key)"/>
+                                <listcell label="@load(each.name.getDescription(sessionScope.userProfile.locale))"/>
+                            </listitem>
+                        </template>
+                    </listbox>
+                </vbox>
+            </hbox>
+            <hbox width="100%" pack="end">
+                <button onClick="@command('selectReferencedEntity')" label="${labels.select_button}" sclass="button-link"
+                        tooltiptext="@init(labels.select_button)"/>
+                <button onClick="@command('detachWindow')" label="${labels.close_button}" tooltiptext="@init(labels.close_button)"
+                        sclass="button-link"/>
+            </hbox>
+        </vlayout>
+    </window>
+</zk>

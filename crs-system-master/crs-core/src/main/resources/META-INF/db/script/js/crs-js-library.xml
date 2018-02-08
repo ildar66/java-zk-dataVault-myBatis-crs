@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <include file="crs-js-library.sql" relativeToChangelogFile="true" />
+
+    <changeSet id="crs-js-lib-md-data-access-script" author="pmasalov" logicalFilePath="crs-js-lib-md-data-access-script" runAlways="true" runOnChange="true">
+        <update tableName="crs_s_calc_formula">
+            <column name="formula" valueClobFile="lib-md-data-access.js" />
+            <where>h_id = (select id from crs_h_calc_formula where key = 'LIB_MD_DATA_ACCESS')</where>
+        </update>
+    </changeSet>
+</databaseChangeLog>

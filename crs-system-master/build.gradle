@@ -1,0 +1,264 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
+buildscript {
+    ext {
+        grettyVersion = '2.0.0'
+        gradleGitVersion = '1.7.2'
+        gradleJrebelVersion = '1.1.5'
+    }
+    dependencies {
+        classpath "org.akhikhl.gretty:gretty:$grettyVersion"
+        classpath "org.ajoberstar:gradle-git:$gradleGitVersion"
+        classpath "gradle.plugin.org.zeroturnaround:gradle-jrebel-plugin:$gradleJrebelVersion"
+    }
+}
+
+apply plugin: "org.ajoberstar.release-opinion"
+apply plugin: "org.ajoberstar.grgit"
+
+allprojects {
+    defaultTasks 'clean', 'check', 'assemble'
+
+    group projectGroup
+
+    ext {
+        projectCurrentDate = currentDate()
+
+        findBugsVersion = '3.0.1'
+        checkstyleVersion = '8.1'
+        liquibasePluginVersion = '1.2.4'
+
+        javaeeVersion = '6.0'
+        ojdbcVersion = '12.1.0.1.0'
+        junitVersion = '4.12'
+        assertjVersion = '3.6.2'
+
+        springVersion = '4.3.10.RELEASE'
+        springSecurityVersion = '4.2.3.RELEASE'
+
+        camelVersion = '2.19.2'
+        activeMqCamelVersion = '5.15.0'
+        quartzVersion = '2.2.3'
+
+        mybatisVersion = '3.4.2'
+        mybatisSpringVersion = '1.3.1'
+        mybatisTypehandlersJsr310Version = '1.0.2'
+        liquibaseVersion = '3.5.3'
+        liquibaseSlf4jVersion = '2.0.0'
+        jooqVersion = '3.9.0'
+
+        slf4jApiVersion = '1.7.25'
+        logbackClassicVersion = '1.2.3'
+        log4jVersion = '1.2.17'
+
+        zkVersion = '8.0.5'
+        zkSpreadsheetVersion = '3.9.1'
+        zkSpringVersion = '3.2.0'
+
+        commonsLang3Version = '3.6'
+        commonsCollections4Version = '4.1'
+        jacksonVersion = '2.9.0'
+        caffeineVersion = '2.5.3'
+        guavaVersion = '22.0'
+        validationApiVersion = '1.1.0.Final'
+        commonsCodecVersion = '1.10'
+        commonsIoVersion = '2.5'
+
+        resourcesFiltering = {
+            ['**/*config.properties', '**/changelog.txt', '**/logback*.xml'].each {
+                filesMatching(it) {
+                    filter ReplaceTokens, tokens: [
+                            "projectVersion"                       : project.version.toString(),
+                            "currentDate"                          : projectCurrentDate,
+                            "projectName"                          : rootProject.name,
+                            "buildBranch"                          : buildBranch,
+                            "dbUrl"                                : dbUrl,
+                            "dbUsername"                           : dbUsername,
+                            "dbPassword"                           : dbPassword,
+
+                            "clientPortalIntegrationProjectVersion": clientPortalIntegrationProjectVersion,
+                            "clientPortalIntegrationBuildBranch"   : clientPortalIntegrationBuildBranch,
+                            "clientPortalIntegrationProjectName"   : project.name,
+
+                            "structureExportProjectVersion"        : structureExportProjectVersion,
+                            "structureExportBuildBranch"           : structureExportBuildBranch,
+                            "structureExportProjectName"           : project.name,
+
+                            "structureImportProjectVersion"        : structureImportProjectVersion,
+                            "structureImportBuildBranch"           : structureImportBuildBranch,
+                            "structureImportProjectName"           : project.name,
+
+                            "ratingImportProjectVersion"           : structureImportProjectVersion,
+                            "ratingImportBuildBranch"              : structureImportBuildBranch,
+                            "ratingImportProjectName"              : project.name
+
+                    ]
+                }
+            }
+        }
+    }
+
+    apply plugin: 'java'
+    apply plugin: 'checkstyle'
+    apply plugin: 'findbugs'
+    apply plugin: 'org.akhikhl.gretty'
+
+    configurations {
+        testCompile.exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+        testCompile.exclude group: 'log4j', module: 'log4j'
+
+        grettyWebapp
+    }
+
+    tasks.withType(JavaCompile) {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    tasks.withType(Jar) {
+        manifest {
+            attributes(
+                    "Build-Time": projectCurrentDate,
+                    "Implementation-Vendor": "Master-Domino",
+                    "Implementation-Vendor-Id": project.group,
+                    "Implementation-Title": project.name,
+                    "Implementation-Version": project.version
+            )
+        }
+    }
+
+    tasks.withType(FindBugs) {
+        reports {
+            xml.enabled false
+            html.enabled true
+        }
+    }
+
+    dependencies {
+        testCompile(
+                "junit:junit:$junitVersion",
+                "org.springframework:spring-test:$springVersion",
+                "com.oracle:ojdbc7:$ojdbcVersion",
+                "org.assertj:assertj-core:$assertjVersion",
+                "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion",
+                "javax:javaee-api:$javaeeVersion",
+                "com.google.guava:guava:$guavaVersion",
+                "commons-io:commons-io:$commonsIoVersion"
+        )
+
+        gretty(
+                project(path: ':crs-core', configuration: 'compileOnly'),
+                project(path: ':crs-web', configuration: 'compileOnly'),
+                project(path: ':crs-integration-web', configuration: 'compileOnly'),
+
+                "com.oracle:ojdbc7:$ojdbcVersion"
+        )
+
+        grettyWebapp(
+                "org.slf4j:slf4j-api:$slf4jApiVersion",
+                "ch.qos.logback:logback-classic:$logbackClassicVersion"
+        )
+    }
+
+    javadoc {
+        title = "Central Rating System $project.version $projectCurrentDate"
+    }
+
+    test {
+        systemProperties = System.properties
+        systemProperties.dbUrl = dbUrl
+        systemProperties.dbUsername = dbUsername
+        systemProperties.dbPassword = dbPassword
+
+        testLogging.showExceptions = true
+        testLogging.showStackTraces = true
+        testLogging.showCauses = true
+        //testLogging.showStandardStreams = true
+    }
+
+    checkstyle {
+        toolVersion = checkstyleVersion
+        configFile = new File(rootDir, "md_checkstyle.xml")
+    }
+
+    findbugs {
+        toolVersion = findBugsVersion
+        sourceSets = [sourceSets.main]
+    }
+
+    gretty {
+        classPath = []
+        servletContainer = 'jetty9'
+        httpPort = grettyHttpPort as Integer
+        realmConfigFile = project(':crs-web').projectDir.path + '/jetty-realm.properties'
+        realm = 'auth'
+        enableNaming = true
+        debugSuspend = false
+        scanInterval = 0
+        logbackConfigFile = project(':crs-web').buildDir.path + '/resources/main/logback.xml'
+        inplaceMode = 'hard'
+        jvmArgs = [
+                '-Dfile.encoding=UTF-8',
+                "-Djetty.dbUrl=$dbUrl",
+                "-Djetty.dbUsername=$dbUsername",
+                "-Djetty.dbPassword=$dbPassword",
+                "-Djetty.overrideWebXml=${project.rootDir.path + '/crs-web/src/main/webapp/WEB-INF/override-web.xml'}",
+                agentPath.isEmpty() ? "" : "-agentpath:$agentPath",
+                javaAgent.isEmpty() ? "" : "-javaagent:$javaAgent"
+        ]
+    }
+
+    farm {
+        webapp ':crs-web'
+        webapp ':crs-integration-web'
+    }
+
+    release {
+        tagStrategy {
+            generateMessage = { version -> "Release version: $version.version" }
+            setPrefixNameWithV(false)
+        }
+    }
+
+    project.afterEvaluate {
+        configurations.grettyWebapp.files.each {
+            gretty.classPath.add(it.getAbsolutePath())
+        }
+    }
+
+    processResources resourcesFiltering
+    processTestResources resourcesFiltering
+
+    dbUrl = dbUrl ?: System.properties.dbUrl
+    dbUsername = dbUsername ?: System.properties.dbUsername
+    dbPassword = dbPassword ?: System.properties.dbPassword
+}
+
+subprojects {
+    apply plugin: "org.zeroturnaround.gradle.jrebel"
+
+    jar.dependsOn(generateRebel)
+}
+
+task defineVersion {
+    doLast {
+        ant.propertyfile(file: "gradle.properties") {
+            entry(key: "projectVersion", value: version.toString())
+        }
+
+        grgit = org.ajoberstar.grgit.Grgit.open()
+        grgit.add(patterns: ['gradle.properties'], update: true)
+        def res = grgit.commit(message: 'Version ' + project.version.toString() + ' #skipchecks')
+        grgit.push()
+    }
+}
+
+tasks.release.dependsOn 'defineVersion'
+
+task assembleArchive(dependsOn: ':crs-ear:assemble', type: Zip) {
+    from project(':crs-ear').buildDir.path + '/libs/'
+    from project(':crs-ear').buildDir.path + '/resources/main/META-INF/'
+    include 'crs-ear*'
+    include 'changelog.txt'
+    destinationDir(file(System.properties.releasePath ?: project(':crs-ear').buildDir.path))
+}

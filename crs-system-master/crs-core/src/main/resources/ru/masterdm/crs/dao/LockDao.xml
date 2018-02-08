@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ru.masterdm.crs.dao.LockDao">
+
+    <insert id="requestLock" statementType="CALLABLE">
+        declare
+            v_lockname varchar2(300) := #{lockGlobalName};
+            v_lockhandle varchar2(200);
+            v_retval integer;
+        begin
+            dbms_lock.allocate_unique(v_lockname, v_lockhandle, 200);
+            v_retval := dbms_lock.request(v_lockhandle, dbms_lock.x_mode, #{timeout}, true);
+            if v_retval in (0,4) then
+              null;--ok
+
+            elsif v_retval = 1 then --Timeout. Другой пользователь удерживает лок
+              raise_application_error(-20003, 'Lock name "'||v_lockname||'": Timeout');
+
+            elsif v_retval = 5 then --Illegal lock handle
+              raise_application_error(-20002, 'Lock name "'||v_lockname||'": Illegal lock handle');
+
+            elsif v_retval = 3 then --Parameter error
+              raise_application_error(-20002, 'Lock name "'||v_lockname||'": Parameter error');
+
+            elsif v_retval = 2 then --Deadlock
+              raise_application_error(-20002, 'Lock name "'||v_lockname||'": Deadlock');
+            else
+              raise_application_error(-20002, 'Wrong lock.request result:'||v_retval);
+            end if;
+        end;
+    </insert>
+
+    <insert id="releaseLock" statementType="CALLABLE">
+        declare
+            v_lockname varchar2(300) := #{lockGlobalName};
+            v_lockhandle varchar2(200);
+            v_retval integer;
+        begin
+            dbms_lock.allocate_unique(v_lockname, v_lockhandle, 2);
+            v_retval := dbms_lock.release(v_lockhandle);
+            if v_retval in (0,4) then
+              null;--ok
+
+            elsif v_retval = 1 then --Timeout. Другой пользователь удерживает лок
+              raise_application_error(-20003, 'Lock name "'||v_lockname||'": Timeout');
+
+            elsif v_retval = 5 then --Illegal lock handle
+              raise_application_error(-20002, 'Lock name "'||v_lockname||'": Illegal lock handle');
+
+            elsif v_retval = 3 then --Parameter error
+              raise_application_error(-20002, 'Lock name "'||v_lockname||'": Parameter error');
+
+            elsif v_retval = 2 then --Deadlock
+              raise_application_error(-20002, 'Lock name "'||v_lockname||'": Deadlock');
+            else
+              raise_application_error(-20002, 'Wrong lock.request result:'||v_retval);
+            end if;
+        end;
+    </insert>
+
+    <select id="getLockSessionId" resultType="long">
+        select session_id
+          from sys.dbms_lock_allocated t left outer join dba_locks l on to_char(t.lockid) = l.lock_id1
+         where t.name = #{lockGlobalName}
+    </select>
+
+</mapper>

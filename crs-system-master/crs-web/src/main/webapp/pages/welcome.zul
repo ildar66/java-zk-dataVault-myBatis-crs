@@ -1,0 +1,37 @@
+<borderlayout xmlns:n="native" sclass="no-borders transparent-background">
+    <north height="60px" sclass="no-borders  transparent-background">
+        <hbox hflex="1">
+            <vbox hflex="1" spacing="0">
+                <label value="@init(labels.welcome_title_primary)" sclass="title-primary"/>
+                <label value="@init(labels.welcome_title_secondary)" sclass="title-secondary"/>
+            </vbox>
+            <hbox hflex="1" pack="end">
+                <toolbar>
+                    <button label="@init(labels.ru)" onClick="@command('setLocale', language=labels.ru)" sclass="button-icon"/>
+                    <button label="@init(labels.en)" onClick="@command('setLocale', language=labels.en)" sclass="button-icon"/>
+                </toolbar>
+            </hbox>
+        </hbox>
+    </north>
+    <center sclass="no-borders transparent-background" margins="0, 0, 0, 0" autoscroll="true">
+        <vbox vflex="1" hflex="1">
+            <hbox align="center" sclass="page-home-field-search" hflex="1">
+                <separator hflex="1"/>
+                <vbox hflex="2">
+                    <hlayout spacing="0" hflex="1">
+                        <textbox value="@bind(nav.searchString)" onOK="@command('search')" hflex="1" onCreate="@command('focus')"/>
+                        <button iconSclass="z-icon-search" autodisable="self" onClick="@command('search')" tooltiptext="@init(labels.search_button)"/>
+                    </hlayout>
+                    <label value="@init(labels.welcome_search_title)" sclass="label-search"/>
+                </vbox>
+                <separator hflex="1"/>
+            </hbox>
+        </vbox>
+    </center>
+    <south sclass="no-borders footer  transparent-background" height="30px">
+        <div zclass="copyright text-muted text-center small">
+            <n:small>${labels.layout_developer}</n:small>
+            <n:small>${labels.layout_app_version} ${nav.projectInfo} ${nav.buildBranch}</n:small>
+        </div>
+    </south>
+</borderlayout>

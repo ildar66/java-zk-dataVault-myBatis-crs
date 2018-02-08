@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ru.masterdm.crs.dao.AuditDao">
+
+    <resultMap id="auditBulkResultMap" type="auditDto" autoMapping="true">
+        <id property="cc" column="$cc" />
+        <collection property="auditLogs" ofType="auditLog" resultMap="auditResultMap" />
+    </resultMap>
+
+    <resultMap id="auditResultMap" type="auditLog" autoMapping="true">
+        <id property="id" column="id"/>
+        <association property="entity" resultMap="entityMap"/>
+        <association property="executor" columnPrefix="u_" javaType="user" autoMapping="true"/>
+    </resultMap>
+
+    <resultMap id="entityMap" type="entity" autoMapping="true">
+        <id property="id" column="ent_id" />
+        <result property="key" column="ent_key"/>
+        <result property="ldts" column="ent_ldts"/>
+        <association property="meta" resultMap="entityMetaMap" />
+    </resultMap>
+
+    <resultMap id="entityMetaMap" type="entityMeta" autoMapping="true">
+        <result property="key" column="em_key"/>
+        <association property="keyName" resultMap="MultilangDescriptionMap" />
+    </resultMap>
+
+    <resultMap id="MultilangDescriptionMap" type="MultilangDescription" autoMapping="true">
+        <result property="descriptionRu" column="name_ru"/>
+        <result property="descriptionEn" column="name_en"/>
+    </resultMap>
+
+    <select id="getLogs" resultMap="auditBulkResultMap">
+        <if test="rowRange != null">
+        select *
+          from (
+        </if>
+                select log.*, rownum "$nn",
+        <if test="rowRange != null">
+                       count(1) over () "$cc" <!-- kind of "analytical count" -->
+        </if>
+        <if test="rowRange == null">
+                       0 "$cc" <!-- just value for id -->
+        </if>
+                  from (select al.id id, al.action action, al.entity_key ent_key, al.entity_satellite_id ent_id, al.entity_ldts ent_ldts,
+                               al.executor_id u_id, uh.key u_key, al.metadata_key em_key, al.record_timestamp recordTimestamp,
+                               us.surname u_surname, us.name u_name, us.patronymic u_patronymic, us.full_name u_fullname,
+                               s.name_ru name_ru, s.name_en name_en,
+                               row_number() over (partition by al.id, us.h_id order by us.ldts desc) rn
+                          from crs_audit_log al join crs_h_user uh on uh.id = al.executor_id
+                                                join crs_s_user us on uh.id = us.h_id
+                                                join crs_h_entity h on h.key = al.metadata_key
+                                                join (
+                                                  select e.h_id, e.name_ru, e.name_en
+                                                    from (
+                                                      select e.h_id, e.name_ru, e.name_en, row_number() over (partition by e.h_id order by e.ldts desc) rn
+                                                        from crs_s_entity e
+                                                    ) e
+                                                   where e.rn = 1
+                                                ) s on s.h_id = h.id
+                         order by al.id desc) log
+                  where rn = 1
+        <if test="filter!= null">
+            <foreach index="key" item="value" collection="filter" separator="and" open="and">
+                <if test="key == 'ACTION'">
+                        ${key} = #{value}
+                </if>
+                <if test="key == 'DATE_FROM'">
+                        recordTimestamp &gt;= #{value}
+                </if>
+                <if test="key == 'DATE_TO'">
+                        recordTimestamp &lt;= #{value}
+                </if>
+                <if test="key == 'AUTHOR'">
+                        upper(u_fullname) like upper('%' || trim('${value}') || '%')
+                </if>
+                <if test="key == 'OBJECT'">
+                        upper(ent_key) like upper('%' || trim('${value}') || '%')
+                </if>
+            </foreach>
+        </if>
+        <if test="rowRange != null">
+               )
+         where "$nn" between #{rowRange.startRow} and #{rowRange.endRow}
+        </if>
+    </select>
+
+    <insert id="writeLog" statementType="CALLABLE">
+        begin
+            insert into crs_audit_log(id, metadata_key, entity_key, entity_satellite_id, entity_ldts, executor_id, action, record_timestamp)
+            values(crs_audit_log_seq.nextval, #{auditLog.entity.meta.key}, #{auditLog.entity.key}, #{auditLog.entity.id},
+                   #{auditLog.entity.ldts}, #{auditLog.executor.hubId}, #{auditLog.action}, systimestamp)
+            returning id, record_timestamp into #{auditLog.id, javaType=long, jdbcType=NUMERIC, mode=OUT},
+                                                #{auditLog.recordTimestamp, javaType=java.time.LocalDateTime, jdbcType=TIMESTAMP, mode=OUT};
+
+        end;
+    </insert>
+</mapper>

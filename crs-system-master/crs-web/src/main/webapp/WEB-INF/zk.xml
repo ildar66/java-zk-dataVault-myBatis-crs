@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE xml>
+<zk>
+    <system-config>
+        <label-location>/layout.properties</label-location>
+        <label-location>/pages/common.properties</label-location>
+        <label-location>/pages/welcome.properties</label-location>
+        <label-location>/pages/search_result.properties</label-location>
+        <label-location>/pages/favorites.properties</label-location>
+
+        <label-location>/pages/entity/meta/entity_meta_list.properties</label-location>
+        <label-location>/pages/entity/meta/entity_meta.properties</label-location>
+        <label-location>/pages/entity/meta/entity_meta_group.properties</label-location>
+        <label-location>/pages/entity/meta/form_meta_group.properties</label-location>
+        <label-location>/pages/entity/meta/classifier_meta_group.properties</label-location>
+        <label-location>/pages/entity/meta/select_referenced_entity.properties</label-location>
+        <label-location>/pages/entity/meta/classifier_meta.properties</label-location>
+        <label-location>/pages/entity/meta/classifier_meta_list.properties</label-location>
+        <label-location>/pages/entity/meta/form_meta_list.properties</label-location>
+
+        <label-location>/pages/entity/entity_list.properties</label-location>
+        <label-location>/pages/entity/edit_entities.properties</label-location>
+        <label-location>/pages/entity/edit_departments.properties</label-location>
+        <label-location>/pages/entity/edit_users.properties</label-location>
+        <label-location>/pages/entity/edit_roles.properties</label-location>
+        <label-location>/pages/entity/edit_permissions.properties</label-location>
+        <label-location>/pages/entity/edit_entities_filter.properties</label-location>
+        <label-location>/pages/entity/edit_entity.properties</label-location>
+        <label-location>/pages/entity/edit_entity_text.properties</label-location>
+        <label-location>/pages/entity/edit_entity_ref.properties</label-location>
+        <label-location>/pages/entity/edit_entity_references.properties</label-location>
+        <label-location>/pages/entity/edit_department_ref.properties</label-location>
+        <label-location>/pages/entity/edit_data_slice_date.properties</label-location>
+        <label-location>/pages/entity/client.properties</label-location>
+        <label-location>/pages/entity/client_group.properties</label-location>
+
+        <label-location>/pages/calc/calculations.properties</label-location>
+        <label-location>/pages/calc/edit_calculation.properties</label-location>
+        <label-location>/pages/calc/formula/formula_list.properties</label-location>
+        <label-location>/pages/calc/formula/formula.properties</label-location>
+        <label-location>/pages/calc/model/model_list.properties</label-location>
+        <label-location>/pages/calc/model/model.properties</label-location>
+
+        <label-location>/pages/exception.properties</label-location>
+
+        <label-location>/pages/form/constructor/clone_dialog.properties</label-location>
+        <label-location>/pages/form/constructor/object.properties</label-location>
+        <label-location>/pages/form/constructor/properties_dialog.properties</label-location>
+        <label-location>/pages/form/constructor/constructor.properties</label-location>
+        <label-location>/pages/form/templates/process_dialog.properties</label-location>
+        <label-location>/pages/form/templates/templates.properties</label-location>
+        <label-location>/pages/form/import_export.properties</label-location>
+
+        <label-location>/pages/audit/audit_logs.properties</label-location>
+        
+        <disable-zscript>true</disable-zscript>
+
+        <id-generator-class>ru.masterdm.crs.web.util.IdGeneratorImpl</id-generator-class>
+        <library-property>
+            <name>org.zkoss.zk.ui.uuidRecycle.disabled</name>
+            <value>true</value>
+        </library-property>
+    </system-config>
+    <session-config>
+        <timer-keep-alive>true</timer-keep-alive>
+    </session-config>
+    <error-page>
+        <exception-type>java.lang.Throwable</exception-type>
+        <location>/pages/exception.zul</location>
+    </error-page>
+    <device-config>
+        <device-type>ajax</device-type>
+        <!-- Custom progressbox -->
+        <embed>
+            <![CDATA[<script type="text/javascript">
+                zUtl.progressbox = function(id, msg, mask, icon) {
+                    var html = '<div id="'+id+'"><div id="'+id + '-t" class="z-loading"><div class="z-loading-indicator">'
+                        +'<span class="z-loading-icon"></span><span class="z-loading-icon"></span><span class="z-loading-icon"></span> '
+                        +msg+'</div></div>';
+                    jq(document.body).append(html + '</div>');
+                }
+            </script>]]>
+        </embed>
+    </device-config>
+</zk>

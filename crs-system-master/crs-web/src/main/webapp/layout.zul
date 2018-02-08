@@ -1,0 +1,149 @@
+<?page docType="html" contentType="text/html;charset=UTF-8" language="xul/html" ?>
+<?meta http-equiv="Content-Type" content="text/html; charset=UTF-8" ?>
+<?link type="image/x-icon" href="assets/favicon.ico" rel="icon" ?>
+<?link type="image/x-icon" href="assets/favicon.ico" rel="shortcut icon" ?>
+<zk>
+    <style src="assets/styles/style.css"/>
+    <style src="assets/styles/progressbox.css"/>
+
+    <style src="assets/styles/wysiwyg/lib/codemirror.css"/>
+    <style src="assets/styles/wysiwyg/addon/hint/show-hint.css"/>
+    <style src="assets/styles/wysiwyg/doc/report.css"/>
+    <script src="assets/styles/wysiwyg/lib/codemirror.js"/>
+    <script src="assets/styles/wysiwyg/addon/hint/show-hint.js"/>
+    <script src="assets/styles/wysiwyg/addon/hint/javascript-hint.js"/>
+    <script src="assets/styles/wysiwyg/mode/javascript/javascript.js"/>
+    <script src="assets/styles/wysiwyg/mode/markdown/markdown.js"/>
+    <script src="assets/styles/wysiwyg/ajax/jshint/jshint.js"/>
+    <script src="assets/styles/wysiwyg/wysiwyg.js"/>
+
+    <borderlayout sclass="vertical page-home" apply="org.zkoss.bind.BindComposer"
+                  viewModel="@id('nav') @init('ru.masterdm.crs.web.model.navigation.NavigationModel')" vflex="1">
+        <west autoscroll="true" flex="true" width="50px"
+              vflex="1" sclass="no-borders transparent-background" margins="0, 0, 0, 0" border="0">
+
+            <hlayout sclass="menu-main" vflex="1" spacing="0" onClick="@command('hideAdminMenu')">
+                <borderlayout sclass="no-borders transparent-background" vflex="1" hflex="1">
+                    <center sclass="no-borders transparent-background">
+                        <vlayout>
+                            <div visible="@load(nav.homePage)" sclass="icon-logo"/>
+                            <div visible="@load(not nav.homePage)" sclass="button-icon icon-logo" style="cursor: pointer"
+                                 tooltiptext="${labels.layout_home_page}"
+                                 onClick="@command('navigate', currentPage=page, targetPage='welcome', collapseAdminMenu='true')"/>
+                            <button sclass="button-icon" iconSclass="z-icon-star" tooltiptext="${labels.favorites_title}"
+                                    onClick="@command('navigate', currentPage=page, targetPage='favorites', collapseAdminMenu='true')"/>
+                            <button sclass="button-icon" iconSclass="z-icon-calculator"
+                                    onClick="@command('navigate', currentPage=page, targetPage='calc.calculations', collapseAdminMenu='true')"
+                                    tooltiptext="${labels.calculations_title}"/>
+                            <button sclass="button-icon" iconSclass="z-icon-file-excel-o" tooltiptext="${labels.import_export_title}"
+                                    onClick="@command('navigate', currentPage=page, targetPage='form.import_export', collapseAdminMenu='true')"/>
+                            <separator height="65px"/>
+                            <button sclass="button-icon" iconSclass="z-icon-gears" tooltiptext="${labels.layout_settings}"
+                                    onClick="@command('showAdminMenu')" disabled="@load(not nav.adminMenuAllowed)"/>
+                            <timer id="keepAliveTimer" delay="@load(nav.sessionKeepAliveInterval)" running="true" repeats="true"
+                                   onTimer="@command('keepAlive')"/>
+                        </vlayout>
+                    </center>
+                    <south height="150px" sclass="no-borders transparent-background">
+                        <vlayout>
+                            <button sclass="button-icon" iconSclass="z-icon-user" tooltiptext="@init(nav.currentUser)"/>
+                            <button sclass="button-icon" iconSclass="z-icon-question-circle" tooltiptext="${labels.layout_help}"/>
+                        </vlayout>
+                    </south>
+                </borderlayout>
+            </hlayout>
+        </west>
+        <center sclass="no-borders transparent-background">
+            <borderlayout sclass="no-borders  transparent-background">
+                <west visible="false" sclass="@load(nav.adminMenu ? 'no-borders admin-menu admin-menu-popup' : 'no-borders admin-menu')"
+                      collapsible="true"
+                      open="@load(nav.adminMenu and nav.freezeAdminMenu)">
+                    <vlayout height="100%" spacing="0">
+                        <listbox id="adminMenuList" vflex="1">
+                            <listgroup label="${labels.layout_entity_list_title}"/>
+                            <if test="@load(not nav.isPermitted('ENTITY', 'VIEW'))">
+                                <listitem label="@init(labels.entity_meta_list_title)" value="entity.meta.entity_meta_list" disabled="true"/>
+                            </if>
+                            <if test="@load(nav.isPermitted('ENTITY', 'VIEW'))">
+                                <listitem label="@init(labels.entity_meta_list_title)" value="entity.meta.entity_meta_list"
+                                          onClick="@command('navigate', currentPage=page, targetPage=self.value)"/>
+                            </if>
+                            <if test="@load(not nav.isPermittedForEntityType('DICTIONARY','VIEW'))">
+                                <listitem label="@init(labels.entity_list_title)" value="entity.meta.entity_list"
+                                          disabled="true"/>
+                            </if>
+                            <if test="@load(nav.isPermittedForEntityType('DICTIONARY','VIEW'))">
+                                <listitem label="@init(labels.entity_list_title)" value="entity.meta.entity_list"
+                                          onClick="@command('navigate', currentPage=page, targetPage=self.value)"/>
+                            </if>
+                            <listgroup label="${labels.layout_calculations_title}"/>
+                            <if test="@load(not nav.isPermittedForEntityType('INPUT_FORM', 'VIEW'))">
+                                <listitem label="@init(labels.form_meta_list_title)" value="entity.meta.form_meta_list"
+                                          disabled="true"/>
+                            </if>
+                            <if test="@load(nav.isPermittedForEntityType('INPUT_FORM', 'VIEW'))">
+                                <listitem label="@init(labels.form_meta_list_title)" value="entity.meta.form_meta_list"
+                                          onClick="@command('navigate', currentPage=page, targetPage=self.value)"/>
+                            </if>
+                            <if test="@load(not nav.isPermittedForEntityType('CLASSIFIER','VIEW'))">
+                                <listitem label="@init(labels.classifier_meta_list_title)" value="entity.meta.classifier_meta_list"
+                                          disabled="true"/>
+                            </if>
+                            <if test="@load(nav.isPermittedForEntityType('CLASSIFIER','VIEW'))">
+                                <listitem label="@init(labels.classifier_meta_list_title)" value="entity.meta.classifier_meta_list"
+                                          onClick="@command('navigate', currentPage=page, targetPage=self.value)"/>
+                            </if>
+                            <if test="@load(not nav.isPermitted('CALC_FORMULA', 'VIEW'))">
+                                <listitem label="@init(labels.formula_list_title)" value="calc.formula.formula_list"
+                                          disabled="true"/>
+                            </if>
+                            <if test="@load(nav.isPermitted('CALC_FORMULA', 'VIEW'))">
+                                <listitem label="@init(labels.formula_list_title)" value="calc.formula.formula_list"
+                                          onClick="@command('navigate', currentPage=page, targetPage=self.value)"/>
+                            </if>
+                            <if test="@load(not nav.isPermitted('CALC_MODEL','VIEW'))">
+                                <listitem label="@init(labels.model_list_title)" value="calc.model.model_list" disabled="true"/>
+                            </if>
+                            <if test="@load(nav.isPermitted('CALC_MODEL','VIEW'))">
+                                <listitem label="@init(labels.model_list_title)" value="calc.model.model_list"
+                                          onClick="@command('navigate', currentPage=page, targetPage=self.value)"/>
+                            </if>
+                            <listgroup label="${labels.layout_import_export_title}"/>
+                            <if test="@load(not nav.isPermitted('FORM_TEMPLATE','VIEW'))">
+                                <listitem label="@init(labels.templates_import_title)" value="form.templates.templates_import"
+                                          disabled="true"/>
+                                <listitem label="@init(labels.templates_export_title)" value="form.templates.templates_export"
+                                          disabled="true"/>
+                                <listitem label="@init(labels.templates_forms_title)" value="form.templates.templates_forms"
+                                          disabled="true"/>
+                            </if>
+                            <if test="@load(nav.isPermitted('FORM_TEMPLATE','VIEW'))">
+                                <listitem label="@init(labels.templates_import_title)" value="form.templates.templates_import"
+                                          onClick="@command('navigate', currentPage=page, targetPage=self.value)"/>
+                                <listitem label="@init(labels.templates_export_title)" value="form.templates.templates_export"
+                                          onClick="@command('navigate', currentPage=page, targetPage=self.value)"/>
+                                <listitem label="@init(labels.templates_forms_title)" value="form.templates.templates_forms"
+                                          onClick="@command('navigate', currentPage=page, targetPage=self.value)"/>
+                            </if>
+                            <listgroup label="${labels.layout_settings_title}"/>
+                            <listitem label="@init(labels.edit_users_title)" onClick="@command('editUsers')"/>
+                            <listitem label="@init(labels.edit_roles_title)" onClick="@command('editRoles')"/>
+                            <listitem label="@init(labels.edit_permissions_title)" value="entity.edit_permissions"
+                                      onClick="@command('navigate', currentPage=page, targetPage=self.value)"/>
+                            <listitem label="@init(labels.edit_departments_title)" onClick="@command('editDepartments')"/>
+                            <listitem label="@init(labels.audit_logs_title)" value="audit.audit_logs"
+                                      onClick="@command('navigate', currentPage=page, targetPage=self.value)"/>
+                        </listbox>
+                        <hbox width="100%" height="100%" pack="end">
+                            <button iconSclass="z-icon-thumb-tack" sclass="@load(nav.freezeAdminMenu ? 'button-icon' : 'button-icon button-off')"
+                                    onClick="@command('freezeAdminMenu')"/>
+                        </hbox>
+                    </vlayout>
+                </west>
+                <center sclass="no-borders  transparent-background">
+                    <include id="pageInclude" src="@load(nav.pageName)" onClick="@command('hideAdminMenu')"/>
+                </center>
+            </borderlayout>
+        </center>
+    </borderlayout>
+</zk>
